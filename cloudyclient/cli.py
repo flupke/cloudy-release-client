@@ -56,7 +56,7 @@ def poll_deployments():
     for url in settings.DEPLOYMENTS:
         try:
             # Retrieve deployment data from server
-            client = CloudyClient(url)
+            client = CloudyClient(url, dry_run=dry_run)
             data = client.poll()
             base_dir = data['base_dir']
             project_name = data['project_name']

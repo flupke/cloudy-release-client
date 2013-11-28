@@ -11,11 +11,16 @@ logger = logging.getLogger(__name__)
 
 class CloudyClient(object):
     '''
-    Encapsulates communications with the cloudy-release server.
+    Encapsulates communications with the cloudy-release server for a single
+    deployment.
+
+    The constructor takes a deployment's *poll_url*. If *dry_run* is True,
+    status changes are not sent to the server.
     '''
 
-    def __init__(self, poll_url):
+    def __init__(self, poll_url, dry_run=False):
         self.poll_url = poll_url
+        self.dry_run = dry_run
 
     def poll(self):
         '''
@@ -31,6 +36,8 @@ class CloudyClient(object):
         return data
 
     def pending(self):
+        if self.dry_run:
+            return
         resp = requests.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'pending',
@@ -39,6 +46,8 @@ class CloudyClient(object):
         resp.raise_for_status()
 
     def error(self, output):
+        if self.dry_run:
+            return
         resp = requests.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'error',
@@ -48,6 +57,8 @@ class CloudyClient(object):
         resp.raise_for_status()
 
     def success(self, output):
+        if self.dry_run:
+            return
         resp = requests.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'success',
