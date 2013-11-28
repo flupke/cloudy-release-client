@@ -10,7 +10,7 @@ DEFAULT_CONFIG_PLACES = [
 
 def load_conf(configs=None, quiet=True):
     """
-    Load configuration.
+    Load local configuration.
 
     *configs* can be a list of Python file locations that will be loaded in
     order to update the defaults.

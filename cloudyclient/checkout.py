@@ -43,7 +43,7 @@ def rety_vcs_command(func):
         retries = 0
         while True:
             try:
-                return func()
+                return func(*args, **kwargs)
             except subprocess.CalledProcessError:
                 retries += 1
                 if retries >= settings.VCS_RETRIES:
@@ -68,7 +68,8 @@ class Checkout(object):
         run('mkdir', '-p', base_dir)
         # Clone the repository or copy it to its next location
         checkout_symlink = op.join(base_dir, project_name)
-        checkout_dirs = [checkout_symlink + '.%s' % i for i in range(2)]
+        checkout_dirs = [op.join(base_dir, '.%s.%s' % (project_name, i))
+                for i in range(2)]
         if not op.exists(checkout_symlink):
             # First checkout
             next_checkout_dir = checkout_dirs[0]
