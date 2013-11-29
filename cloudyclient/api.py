@@ -1,8 +1,14 @@
 import os
+import os.path as op
 import subprocess
 import logging
 import contextlib
 import threading
+import json
+
+import yaml
+
+from cloudyclient.state import load_data
 
 
 logger = logging.getLogger(__name__)
@@ -95,3 +101,39 @@ def dry_run():
         yield
     finally:
         set_global('dry_un', False)
+
+
+def find_deployment_variables(base_dir=None):
+    '''
+    Retrieve deployment variables by searching from *base_dir* and up.
+
+    If *base_dir* is not specified, :func:`os.getcwd` is used.
+
+    Returns the variables dict, or None if it was not found.
+    '''
+    if base_dir is None:
+        base_dir = os.getcwd()
+    base_dir = op.abspath(base_dir)
+    while base_dir != '/':
+        base_dir, tail = op.split(base_dir)
+        project_name, _, index = tail.rpartition('.')
+        project_name = project_name.lstrip('.')
+        if index.isdigit():
+            # Looks like we found a checkout dir, see if we can load data
+            data = load_data(base_dir, project_name)
+            if data is not None:
+                variables_format = data['variables_format']
+                variables = data['variables']
+                if variables_format == 'json':
+                    return json.loads(variables)
+                elif variables_format == 'yaml':
+                    return yaml.load(variables)
+                elif variables_format == 'python':
+                    code = compile(variables, '<deployment variables>', 'exec')
+                    code_globals = {}
+                    exec(code, code_globals)
+                    code_globals.pop('__builtins__', None)
+                    return code_globals
+                else:
+                    raise ValueError('unknwon variables format "%s"' %
+                            variables_format)

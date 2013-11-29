@@ -1,0 +1,4 @@
+{
+    "variables_format": "yaml",
+    "variables": "a: 1\r\nb: 3"
+}
