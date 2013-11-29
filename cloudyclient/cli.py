@@ -7,7 +7,8 @@ import traceback
 from cloudyclient import log
 from cloudyclient.client import CloudyClient
 from cloudyclient.api import dry_run, run, get_global
-from cloudyclient.state import get_state_directory, get_data_filename
+from cloudyclient.state import (get_state_directory, get_data_filename,
+        load_data)
 from cloudyclient.conf import settings
 from cloudyclient.conf.local import load_conf
 from cloudyclient.checkout import get_implementation
@@ -55,11 +56,20 @@ def poll_deployments():
     handlers = []
     for url in settings.DEPLOYMENTS:
         try:
+            logger.debug('polling %s', url)
             # Retrieve deployment data from server
             client = CloudyClient(url, dry_run=dry_run)
             data = client.poll()
             base_dir = data['base_dir']
             project_name = data['project_name']
+            # Get previous deployment hash
+            previous_data = load_data(base_dir, project_name)
+            depl_hash = data['deployment_hash']
+            prev_depl_hash = previous_data.get('deployment_hash')            
+            if depl_hash == prev_depl_hash:
+                # Nothing new to deploy
+                logger.debug('already up-to-date')
+                continue
             # Notify server that the deployment started
             client.pending()
             # Create state directory (this needs to be done before creating
@@ -116,11 +126,6 @@ def deploy(data):
     base_dir = data['base_dir']
     project_name = data['project_name']
     repository_type = data['repository_type']
-    # Write deployment data in the state directory
-    if not dry_run:
-        data_filename = get_data_filename(base_dir, project_name)
-        with open(data_filename, 'w') as fp:
-            json.dump(data, fp, indent=4)
     # Checkout code
     try:
         checkout_class = get_implementation(repository_type)
@@ -130,4 +135,9 @@ def deploy(data):
     checkout = checkout_class()
     checkout.get_commit(base_dir, project_name, data['repository_url'],
             data['commit'])
+    # Write deployment data in the state directory
+    if not dry_run:
+        data_filename = get_data_filename(base_dir, project_name)
+        with open(data_filename, 'w') as fp:
+            json.dump(data, fp, indent=4)
     return True
