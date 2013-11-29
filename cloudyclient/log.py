@@ -52,14 +52,18 @@ class FormattedMemoryHandler(BufferingHandler):
 
 def setup():
     '''
-    Setup the root logger.
+    Configure logging.
     '''
+    # Setup root logger
     formatter = get_formatter()
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     root = logging.getLogger()
     root.addHandler(handler)
     root.setLevel(logging.DEBUG)
+    # Setup requests loggers
+    requests_logger = logging.getLogger('requests')
+    requests_logger.setLevel(logging.WARNING)
 
 
 def get_deployment_handlers(base_dir, project_name):
