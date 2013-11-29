@@ -1,0 +1,4 @@
+{
+    "variables_format": "json",
+    "variables": "{\"a\": 1, \"b\": 3}"
+}
