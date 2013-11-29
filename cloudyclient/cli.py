@@ -4,6 +4,7 @@ import logging
 import time
 import json
 import traceback
+import subprocess
 
 from cloudyclient import log
 from cloudyclient.client import CloudyClient
@@ -13,6 +14,7 @@ from cloudyclient.state import (get_state_directory, get_data_filename,
 from cloudyclient.conf import settings
 from cloudyclient.conf.local import load_conf
 from cloudyclient.checkout import get_implementation
+from cloudyclient.deploy import DeploymentScript
 
 
 logger = logging.getLogger(__name__)
@@ -132,6 +134,8 @@ def deploy(data):
     base_dir = data['base_dir']
     project_name = data['project_name']
     repository_type = data['repository_type']
+    deployment_script_type = data['deployment_script_type']
+    deployment_script = data['deployment_script']
     # Checkout code
     try:
         checkout_class = get_implementation(repository_type)
@@ -139,8 +143,18 @@ def deploy(data):
         logger.error('unknown repository type "%s"', repository_type)
         return False
     checkout = checkout_class()
-    checkout.get_commit(base_dir, project_name, data['repository_url'],
-            data['commit'])
+    checkout_dir = checkout.get_commit(base_dir, project_name, 
+            data['repository_url'], data['commit'])
+    # Execute deployment script
+    script = DeploymentScript(deployment_script_type, deployment_script)
+    try:
+        script.run(checkout_dir)
+    except subprocess.CalledProcessError:
+        logger.error('deployment script failed')
+        return False
+    except:
+        logger.error('deployment script failed', exc_info=True)
+        return False
     # Write deployment data in the state directory
     if not dry_run:
         data_filename = get_data_filename(base_dir, project_name)

@@ -63,6 +63,8 @@ class Checkout(object):
     def get_commit(self, base_dir, project_name, repo_url, commit):
         '''
         Checkout a specific commit from VCS.
+
+        Returns the directory where the code has been checked out.
         '''
         # Create base directory
         run('mkdir', '-p', base_dir)
@@ -99,6 +101,7 @@ class Checkout(object):
             run('mv', '-T', temp_symlink, checkout_symlink)
         else:
             run('ln', '-s', next_checkout_dir, checkout_symlink)
+        return next_checkout_dir
 
     @abc.abstractmethod
     def clone(self, repo_url, path):
