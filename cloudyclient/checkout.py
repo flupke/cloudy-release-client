@@ -88,6 +88,7 @@ class Checkout(object):
             update_symlink = True
         # Fetch from VCS and checkout commit
         with cd(next_checkout_dir):
+            self.update_repo_url(repo_url)
             self.fetch()
             self.checkout_commit(commit)
             self.clean()
@@ -123,6 +124,12 @@ class Checkout(object):
         Cleanup an existing checkout.
         '''
 
+    @abc.abstractmethod
+    def update_repo_url(self, url):
+        '''
+        Update the repository URL.
+        '''
+
 
 class GitCheckout(Checkout):
 
@@ -139,6 +146,9 @@ class GitCheckout(Checkout):
 
     def clean(self):
         run('git', 'clean', '-fxd')
+
+    def update_repo_url(self, url):
+        run('git', 'remote', 'set-url', 'origin', url)
 
 
 register('git', GitCheckout)
