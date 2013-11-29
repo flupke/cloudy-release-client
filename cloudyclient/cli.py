@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 import time
@@ -93,8 +94,13 @@ def poll_deployments():
                 else:
                     client.error(output)
         except:
-            # Something bad happened, try to log error to the server
+            # Something bad happened
             try:
+                # Remove data file because we want to redo the deployment in
+                # the next run
+                if client is not None:
+                    os.unlink(get_data_filename(base_dir, project_name))
+                # Try to log error to the server
                 message = 'unexpected error while deploying from "%s"'
                 with log.add_hanlers(*handlers):
                     logger.error(message, url, exc_info=True)
