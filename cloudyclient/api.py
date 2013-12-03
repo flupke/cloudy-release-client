@@ -1,3 +1,4 @@
+import sys
 import os
 import os.path as op
 import subprocess
@@ -5,10 +6,13 @@ import logging
 import contextlib
 import threading
 import json
+import traceback
 
 import yaml
+import jinja2
 
 from cloudyclient.state import load_data
+from cloudyclient.exceptions import TemplateError
 
 
 logger = logging.getLogger(__name__)
@@ -103,14 +107,14 @@ def dry_run():
         set_global('dry_un', False)
 
 
-def find_deployment_variables(base_dir=None):
+def find_deployment_data(base_dir=None):
     '''
-    Retrieve deployment variables by searching from *base_dir* and up.
+    Retrieve deployment data by searching from *base_dir* and up.
 
     If *base_dir* is not specified, :func:`os.getcwd` is used.
 
-    Returns the variables dict, or None if it was not found.
-    '''
+    Returns the data dict, or None if it was not found.
+    '''    
     if base_dir is None:
         base_dir = os.getcwd()
     base_dir = op.abspath(base_dir)
@@ -121,19 +125,104 @@ def find_deployment_variables(base_dir=None):
         if index.isdigit():
             # Looks like we found a checkout dir, see if we can load data
             data = load_data(base_dir, project_name)
-            if data is not None:
-                variables_format = data['variables_format']
-                variables = data['variables']
-                if variables_format == 'json':
-                    return json.loads(variables)
-                elif variables_format == 'yaml':
-                    return yaml.load(variables)
-                elif variables_format == 'python':
-                    code = compile(variables, '<deployment variables>', 'exec')
-                    code_globals = {}
-                    exec(code, code_globals)
-                    code_globals.pop('__builtins__', None)
-                    return code_globals
-                else:
-                    raise ValueError('unknwon variables format "%s"' %
-                            variables_format)
+            if data:
+                return data
+
+
+def find_deployment_variables(base_dir=None):
+    '''
+    Retrieve deployment variables by searching from *base_dir* and up.
+
+    If *base_dir* is not specified, :func:`os.getcwd` is used.
+
+    Returns the variables dict, or None if it was not found.
+    '''
+    data = find_deployment_data(base_dir=base_dir)
+    if data is not None:
+        variables_format = data['variables_format']
+        variables = data['variables']
+        if variables_format == 'json':
+            return json.loads(variables)
+        elif variables_format == 'yaml':
+            return yaml.load(variables)
+        elif variables_format == 'python':
+            code = compile(variables, '<deployment variables>', 'exec')
+            code_globals = {}
+            exec(code, code_globals)
+            code_globals.pop('__builtins__', None)
+            return code_globals
+        else:
+            raise ValueError('unknwon variables format "%s"' %
+                    variables_format)
+
+
+def render_template(source, destination, context={}, use_jinja=False):
+    '''
+    Render template file *source* to *destination*.
+
+    The contents of the source file are formatted with *context*, passed to the
+    :meth:`basestring.format` method, or to jinja if *use_jinja* is True.
+    '''
+    # Read template source 
+    with open(source) as fp:
+        template_src = fp.read()
+
+    # Render template
+    if use_jinja:
+        template = jinja2.Template(template_src, undefined=jinja2.StrictUndefined)
+        try:
+            rendered = template.render(**context)
+        except jinja2.TemplateSyntaxError as exc:
+            line = traceback.extract_tb(sys.exc_info()[2])[-1][1]
+            context = _get_template_context(template_src, line)
+            error = '{0}; line {1} in template:\n\n{2}'.format(
+                    exc, line, context)
+            raise TemplateError(error)
+        except jinja2.UndefinedError:
+            line = traceback.extract_tb(sys.exc_info()[2])[-1][1]
+            context = _get_template_context(template_src, line)
+            error = 'Undefined jinja variable; line {0} in template\n\n{1}'.format(
+                    line, context)
+            raise TemplateError(error)
+    else:
+        rendered = template_src.format(**context)
+
+    # Save rendered template to destination
+    with open(destination, 'w') as fp:
+        fp.write(rendered)  
+
+
+def _get_template_context(template, line, num_lines=5):
+    '''
+    Returns debugging context around a line in a given template.
+
+    Returns:: string
+    '''
+    marker = '    <======================'
+    template_lines = template.splitlines()
+    num_template_lines = len(template_lines)
+
+    # in test, a single line template would return a crazy line number like,
+    # 357.  do this sanity check and if the given line is obviously wrong, just
+    # return the entire template
+    if line > num_template_lines:
+        return template
+
+    context_start = max(0, line - num_lines - 1)  # subtract 1 for 0-based indexing
+    context_end = min(num_template_lines, line + num_lines)
+    error_line_in_context = line - context_start - 1  # subtract 1 for 0-based indexing
+
+    buf = []
+    if context_start > 0:
+        buf.append('[...]')
+        error_line_in_context += 1
+
+    buf.extend(template_lines[context_start:context_end])
+
+    if context_end < num_template_lines:
+        buf.append('[...]')
+
+    if marker:
+        buf[error_line_in_context] += marker
+
+    return '---\n{0}\n---'.format('\n'.join(buf))        
