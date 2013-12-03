@@ -192,11 +192,11 @@ def render_template(source, destination, context={}, use_jinja=False,
             error = '{0}; line {1} in template:\n\n{2}'.format(
                     exc, line, context)
             raise TemplateError(error)
-        except jinja2.UndefinedError:
+        except jinja2.UndefinedError as exc:
             line = traceback.extract_tb(sys.exc_info()[2])[-1][1]
             context = _get_template_context(template_src, line)
-            error = 'Undefined jinja variable; line {0} in template\n\n{1}'.format(
-                    line, context)
+            error = '{0}; line {1} in template\n{2}'.format(
+                    exc, line, context)
             raise TemplateError(error)
     else:
         rendered = template_src.format(**context)
