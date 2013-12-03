@@ -29,6 +29,8 @@ def main():
     parser.add_argument('--dry-run', '-d', action='store_true',
             help='do not modify anything, just log commands that should be '
             'executed')
+    parser.add_argument('--force', '-f', action='store_true',
+            help='always deploy regardless of local state')
     args = parser.parse_args()
 
     # Load configuration
@@ -41,15 +43,15 @@ def main():
     while True:
         if args.dry_run:
             with dry_run():
-                poll_deployments()
+                poll_deployments(args)
         else:
-            poll_deployments()
+            poll_deployments(args)
         if args.run_once:
             break
         time.sleep(settings.POLL_INTERVAL)
 
 
-def poll_deployments():
+def poll_deployments(args):
     '''
     Poll all deployments and deploy them if necessary.
     '''
@@ -68,8 +70,8 @@ def poll_deployments():
             # Get previous deployment hash
             previous_data = load_data(base_dir, project_name)
             depl_hash = data['deployment_hash']
-            prev_depl_hash = previous_data.get('deployment_hash')            
-            if depl_hash == prev_depl_hash:
+            prev_depl_hash = previous_data.get('deployment_hash')
+            if not args.force and depl_hash == prev_depl_hash:
                 # Nothing new to deploy
                 logger.debug('already up-to-date')
                 continue
