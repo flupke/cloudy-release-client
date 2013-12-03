@@ -59,6 +59,12 @@ class DeploymentScript(object):
         self.write_script(script, fp)
         run('/usr/bin/env', 'python', fp.name, cwd=base_dir) 
 
+    def run_python_file(self, fp, base_dir):
+        '''
+        Run path to a Python script.
+        '''
+        run('/usr/bin/env', 'python', self.script, cwd=base_dir)
+
     def write_script(self, script, fp):
         '''
         Write *script* to file object *fp* and make sure the contents are on
