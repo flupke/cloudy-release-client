@@ -145,6 +145,11 @@ def deploy(data):
     checkout = checkout_class()
     checkout_dir = checkout.get_commit(base_dir, project_name, 
             data['repository_url'], data['commit'])
+    # Write deployment data in the state directory
+    if not dry_run:
+        data_filename = get_data_filename(base_dir, project_name)
+        with open(data_filename, 'w') as fp:
+            json.dump(data, fp, indent=4)
     # Execute deployment script
     script = DeploymentScript(deployment_script_type, deployment_script)
     try:
@@ -155,9 +160,4 @@ def deploy(data):
     except:
         logger.error('deployment script failed', exc_info=True)
         return False
-    # Write deployment data in the state directory
-    if not dry_run:
-        data_filename = get_data_filename(base_dir, project_name)
-        with open(data_filename, 'w') as fp:
-            json.dump(data, fp, indent=4)
     return True
