@@ -1,3 +1,4 @@
+import tempfile
 import sys
 import os
 import os.path as op
@@ -72,6 +73,15 @@ def run(*cmd_args, **kwargs):
         logger.error(str(error))
         raise error
     return stdout
+
+
+def sudo(*cmd_args, **kwargs):
+    '''
+    Shortcut to run a command with sudo.
+
+    Accepts same parameters as :func:`run`.
+    '''
+    return run('sudo', *cmd_args, **kwargs)
 
 
 @contextlib.contextmanager
@@ -156,12 +166,16 @@ def find_deployment_variables(base_dir=None):
                     variables_format)
 
 
-def render_template(source, destination, context={}, use_jinja=False):
+def render_template(source, destination, context={}, use_jinja=False,
+        use_sudo=False):
     '''
     Render template file *source* to *destination*.
 
     The contents of the source file are formatted with *context*, passed to the
     :meth:`basestring.format` method, or to jinja if *use_jinja* is True.
+
+    If *use_sudo* is true, first save the rendered template to a temporary
+    file, then copy it to its final position with sudo.
     '''
     # Read template source 
     with open(source) as fp:
@@ -188,8 +202,14 @@ def render_template(source, destination, context={}, use_jinja=False):
         rendered = template_src.format(**context)
 
     # Save rendered template to destination
-    with open(destination, 'w') as fp:
-        fp.write(rendered)  
+    if not use_sudo:
+        with open(destination, 'w') as fp:
+            fp.write(rendered)  
+    else:
+        fp = tempfile.NamedTemporaryFile(prefix='cloudyclient-', delete=False)
+        fp.write(rendered)
+        fp.close()
+        sudo('mv', fp.name, destination)
 
 
 def _get_template_context(template, line, num_lines=5):

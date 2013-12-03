@@ -4,7 +4,7 @@ class CloudyException(Exception):
     '''
 
 
-class CloudyTemplateError(Exception):
+class TemplateError(Exception):
     '''
     Raised by :func:`cloudyclient.api.render_template`.
     '''
