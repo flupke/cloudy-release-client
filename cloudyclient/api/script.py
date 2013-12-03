@@ -1,3 +1,6 @@
+from cloudyclient.conf.local import load_conf
+from cloudyclient import log
+
 from .virtualenv import VersionedVirtualenv
 from .base import find_deployment_data, find_deployment_variables
 
@@ -33,6 +36,10 @@ class PythonDeployScript(object):
     '''
 
     def __init__(self):
+        # Setup logging
+        load_conf()
+        log.setup()
+        # Load deployment variables and data
         self.ddata = find_deployment_data()
         if self.ddata is None:
             raise Exception('deployment state not found')
