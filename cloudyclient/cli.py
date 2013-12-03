@@ -1,4 +1,5 @@
 import os
+import os.path as op
 import argparse
 import logging
 import time
@@ -103,7 +104,9 @@ def poll_deployments(args):
                 # Remove data file because we want to redo the deployment in
                 # the next run
                 if client is not None:
-                    os.unlink(get_data_filename(base_dir, project_name))
+                    data_path = get_data_filename(base_dir, project_name)
+                    if op.exists(data_path):
+                        os.unlink(data_path)
                 # Try to log error to the server
                 message = 'unexpected error while deploying from "%s"'
                 with log.add_hanlers(*handlers):
