@@ -60,7 +60,7 @@ class DeploymentScript(object):
             self.write_script(script, fp)
             run('/usr/bin/env', 'python', fp.name, cwd=base_dir) 
         else:
-            run('/usr/bin/env', 'python', '-m', self.script)
+            run('/usr/bin/env', 'python', '-m', self.script, cwd=base_dir)
 
     def run_python_file(self, fp, base_dir):
         '''
