@@ -65,7 +65,7 @@ class VersionedVirtualenv(object):
         tag_name = self.tags_prefix + release
         with cd(self.path):
             run('git', 'checkout', tag_name)
-            run('git', 'clean', '-fxd')
+            run('git', 'clean', '-fxdq')
 
     def checkout_latest(self):
         '''

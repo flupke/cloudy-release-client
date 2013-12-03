@@ -148,7 +148,7 @@ class GitCheckout(Checkout):
         run('git', 'checkout', commit)
 
     def clean(self):
-        run('git', 'clean', '-fxd')
+        run('git', 'clean', '-fxdq')
 
     def update_repo_url(self, url):
         run('git', 'remote', 'set-url', 'origin', url)
