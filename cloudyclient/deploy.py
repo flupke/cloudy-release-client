@@ -54,10 +54,13 @@ class DeploymentScript(object):
         Run a Python entry point.
         '''
         logger.info('running python entry point %s' % self.script)
-        module, _, func = self.script.partition(':')
-        script = ENTRY_POINT_SCRIPT_TEMPLATE.format(module=module, func=func)
-        self.write_script(script, fp)
-        run('/usr/bin/env', 'python', fp.name, cwd=base_dir) 
+        if ':' in self.script:
+            module, _, func = self.script.partition(':')
+            script = ENTRY_POINT_SCRIPT_TEMPLATE.format(module=module, func=func)
+            self.write_script(script, fp)
+            run('/usr/bin/env', 'python', fp.name, cwd=base_dir) 
+        else:
+            run('/usr/bin/env', 'python', '-m', self.script)
 
     def run_python_file(self, fp, base_dir):
         '''
