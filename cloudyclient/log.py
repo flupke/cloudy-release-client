@@ -1,5 +1,7 @@
+import os
 import logging
 import contextlib
+import sys
 from logging import FileHandler
 from logging.handlers import BufferingHandler
 
@@ -50,17 +52,32 @@ class FormattedMemoryHandler(BufferingHandler):
         return '\n'.join(self.buffer)
 
 
-def setup():
+def setup(log_level=None):
     '''
     Configure logging.
+
+    Set the root logger to *log_level*, a cas-insensitive **STRING** matching
+    log levels found in the :mod:`logging` module.
+
+    If *log_level* is not specified, it is taken from the "CLOUDY_LOG_LEVEL"
+    environment variable, or defaults to "info".
+
+    If an invalid log level is given, print an error and exit.
     '''
+    if log_level is None:
+        log_level = os.environ.get('CLOUDY_LOG_LEVEL', 'info')
+    try:
+        log_level = getattr(logging, log_level.upper())
+    except AttributeError:
+        print 'Invalid log level "%s"' % log_level
+        sys.exit(1)
     # Setup root logger
     formatter = get_formatter()
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     root = logging.getLogger()
     root.addHandler(handler)
-    root.setLevel(logging.DEBUG)
+    root.setLevel(log_level)
     # Setup requests loggers
     requests_logger = logging.getLogger('requests')
     requests_logger.setLevel(logging.WARNING)

@@ -28,11 +28,9 @@ def main():
     # Load configuration
     load_conf()
 
-    # Setup logging
-    log.setup()    
-
-    # Parse command line
+    # Create main parser
     parser = argparse.ArgumentParser(description='cloudy-release client')
+    parser.add_argument('--log-level', '-l', default='info')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # cloudy deploy ...
@@ -57,8 +55,14 @@ def main():
             help='if given, set the deployment\'s commit to this commit')
     commit_parser.set_defaults(func=commit)
     
-    # Run subcommand function
+    # Parse command line
     args = parser.parse_args()
+
+    # Setup logging
+    os.environ['CLOUDY_LOG_LEVEL'] = args.log_level
+    log.setup()
+
+    # Run sub-command function
     args.func(args)
 
 
