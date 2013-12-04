@@ -2,7 +2,7 @@ import os
 import tempfile
 import logging
 
-from cloudyclient.api import run
+from cloudyclient.api import run, cd
 
 
 ENTRY_POINT_SCRIPT_TEMPLATE = '''
@@ -31,25 +31,26 @@ class DeploymentScript(object):
                 run_func = getattr(self, run_func_name)
             except AttributeError:
                 raise ValueError('unsupported sript type "%s"' % self.script_type)
-            run_func(fp, base_dir)
+            with cd(base_dir):
+                run_func(fp)
 
-    def run_bash(self, fp, base_dir):
+    def run_bash(self, fp):
         '''
         Run a bash script.
         '''
         logger.info('running bash deployment script')
         self.write_script(self.script, fp)
-        run('/bin/bash', fp.name, cwd=base_dir)
+        run('/bin/bash', fp.name)
 
-    def run_python_script(self, fp, base_dir):
+    def run_python_script(self, fp):
         '''
         Run a Python script.
         '''
         logger.info('running python deployment script')
         self.write_script(self.script, fp)
-        run('/usr/bin/env', 'python', fp.name, cwd=base_dir)
+        run('/usr/bin/env', 'python', fp.name)
 
-    def run_python_entry_point(self, fp, base_dir):
+    def run_python_entry_point(self, fp):
         '''
         Run a Python entry point.
         '''
@@ -58,15 +59,15 @@ class DeploymentScript(object):
             module, _, func = self.script.partition(':')
             script = ENTRY_POINT_SCRIPT_TEMPLATE.format(module=module, func=func)
             self.write_script(script, fp)
-            run('/usr/bin/env', 'python', fp.name, cwd=base_dir) 
+            run('/usr/bin/env', 'python', fp.name) 
         else:
-            run('/usr/bin/env', 'python', '-m', self.script, cwd=base_dir)
+            run('/usr/bin/env', 'python', '-m', self.script)
 
-    def run_python_file(self, fp, base_dir):
+    def run_python_file(self, fp):
         '''
         Run path to a Python script.
         '''
-        run('/usr/bin/env', 'python', self.script, cwd=base_dir)
+        run('/usr/bin/env', 'python', self.script)
 
     def write_script(self, script, fp):
         '''
