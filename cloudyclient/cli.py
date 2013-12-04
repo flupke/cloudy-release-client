@@ -1,3 +1,4 @@
+import sys
 import os
 import os.path as op
 import argparse
@@ -6,6 +7,8 @@ import time
 import json
 import traceback
 import subprocess
+
+import requests
 
 from cloudyclient import log
 from cloudyclient.client import CloudyClient
@@ -22,25 +25,47 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # Parse command line
-    parser = argparse.ArgumentParser(description='cloudy-release client')
-    parser.add_argument('--run-once', '-1', action='store_true', 
-            help='update all deployments and exit; the default is to poll '
-            'deployments forever')
-    parser.add_argument('--dry-run', '-d', action='store_true',
-            help='do not modify anything, just log commands that should be '
-            'executed')
-    parser.add_argument('--force', '-f', action='store_true',
-            help='always deploy regardless of local state')
-    args = parser.parse_args()
-
     # Load configuration
     load_conf()
 
     # Setup logging
-    log.setup()
+    log.setup()    
 
-    # Execute deployments
+    # Parse command line
+    parser = argparse.ArgumentParser(description='cloudy-release client')
+    subparsers = parser.add_subparsers(help='sub-command help')
+
+    # cloudy deploy ...
+    deploy_parser = subparsers.add_parser('deploy', 
+            help='execute deployments')
+    deploy_parser.add_argument('--run-once', '-1', action='store_true', 
+            help='update all deployments and exit; the default is to poll '
+            'deployments forever')
+    deploy_parser.add_argument('--dry-run', '-d', action='store_true',
+            help='do not modify anything, just log commands that should be '
+            'executed')
+    deploy_parser.add_argument('--force', '-f', action='store_true',
+            help='always deploy regardless of local state')
+    deploy_parser.set_defaults(func=deploy)
+
+    # cloudy commit ...
+    commit_parser = subparsers.add_parser('commit', help='get or retrieve '
+            'current commit of a deployment')
+    commit_parser.add_argument('deployment', 
+            help='deployment name (you can pass a part of the name)')
+    commit_parser.add_argument('commit', nargs='?', 
+            help='if given, set the deployment\'s commit to this commit')
+    commit_parser.set_defaults(func=commit)
+    
+    # Run subcommand function
+    args = parser.parse_args()
+    args.func(args)
+
+
+def deploy(args):
+    '''
+    Execute deployments.
+    '''
     while True:
         if args.dry_run:
             with dry_run():
@@ -50,6 +75,47 @@ def main():
         if args.run_once:
             break
         time.sleep(settings.POLL_INTERVAL)
+
+
+def commit(args):
+    '''
+    Get or set a deployment's commit.
+    '''
+    # Retrieve the deployment by name
+    matches = []
+    all_deployments = []
+    for url in settings.DEPLOYMENTS:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            data = resp.json()
+            full_name = '{project_name}/{deployment_name}'.format(**data)
+            all_deployments.append(full_name)
+            if args.deployment in full_name:
+                matches.append((full_name, data))
+
+    # Error out if we do not have exactly one match
+    if len(matches) == 0:
+        print 'no deployment found matching "%s"; choose one of:\n\n%s' % (
+                args.deployment, '\n'.join(all_deployments))
+        sys.exit(1)
+    elif len(matches) != 1:
+        print 'more than one deployment matches "%s":\n\n%s' % (
+                args.deployment, '\n'.join(m[0] for m in matches))
+        sys.exit(1)
+
+    # Found deployment, get or set commit
+    full_name, data = matches[0]
+    if args.commit is not None:
+        resp = requests.post(data['commit_url'], data={'commit': args.commit})
+        try:
+            resp.raise_for_status()
+        except Exception as exc:
+            print 'failed setting %s commit: %s' % (full_name, exc)
+            sys.exit(1)
+        print 'successfully changed %s commit to %s' % (full_name, args.commit)
+    else:
+        resp = requests.get(data['commit_url'])
+        print '%s: %s' % (full_name, resp.json())
 
 
 def poll_deployments(args):
