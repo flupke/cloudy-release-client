@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class DeploymentScript(object):
     '''
-    Sets up environment and executes a deployment script.
+    Sets up environment and executes a deployment script in a sub process.
     '''
 
     def __init__(self, script_type, script):

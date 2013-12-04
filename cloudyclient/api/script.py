@@ -1,3 +1,5 @@
+import os.path as op
+
 from cloudyclient.conf.local import load_conf
 from cloudyclient import log
 
@@ -8,6 +10,10 @@ from .base import find_deployment_data, find_deployment_variables
 class PythonDeployScript(object):
     '''
     Base class for standard python deployment scripts.
+
+    Deployments using this script must at least define a ``venv_dir``
+    deployment variable (the path to the virtualenv). If it contains "~", it
+    will be expanded to the user's home directory.
     '''
     
     requirements = []
@@ -17,7 +23,7 @@ class PythonDeployScript(object):
     '''
     If true, install wheel in the virtualenv and install packages with
     --use-wheel (requires recent versions of pip and virtualenv to be installed
-    on the system)
+    on the system).
     '''
 
     no_deps = False
@@ -32,7 +38,7 @@ class PythonDeployScript(object):
     '''
     A list of Python package names that must be copied from the system
     installation to the deployment virtualenv (useful for packages difficult or
-    impossible to install with pip such as PyQt4 or PyGTK)
+    impossible to install with pip such as PyQt4 or PyGTK).
     '''
 
     def __init__(self):
@@ -111,7 +117,8 @@ class PythonDeployScript(object):
         Core structure of the script.
         '''
         # Create virtualenv
-        self.venv = self.venv_class(self.dvars['venv_dir'])
+        venv_dir = op.expanduser(self.dvars['venv_dir'])
+        self.venv = self.venv_class(venv_dir)
         # Is this deployment a rollback?
         if self.ddata['commit'] not in self.venv.releases():
             # No, install requirements normally and save a snapshot of the
