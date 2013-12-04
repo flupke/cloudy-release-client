@@ -210,6 +210,7 @@ def render_template(source, destination, context={}, use_jinja=False,
         fp.write(rendered)
         fp.close()
         sudo('mv', fp.name, destination)
+        sudo('chmod', '644', destination)
 
 
 def _get_template_context(template, line, num_lines=5):
