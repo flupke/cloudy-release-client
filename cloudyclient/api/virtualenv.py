@@ -86,12 +86,17 @@ class VersionedVirtualenv(object):
                 releases.append(tag[len(self.tags_prefix):])
         return releases
 
-    def copy_system_package(self, pkg):
+    def copy_system_package(self, pkg, sys_python=None):
         '''
-        Copy a system-wide package in this virtualenv.
+        Copy system-wide *pkg* in this virtualenv.
+
+        *sys_python* can be given to customize the system python executable
+        path. The default is '/usr/bin/python'.
         '''
+        if sys_python is None:
+            sys_python = '/usr/bin/python'
         # Get package path in the system packages
-        pkg_file = run('python', '-c', 
+        pkg_file = run(sys_python, '-c', 
                 'import {0}; print {0}.__file__'.format(pkg))
         # Get site-packages path in the virtualenv
         venv_site_packages = self.run('python', '-c',

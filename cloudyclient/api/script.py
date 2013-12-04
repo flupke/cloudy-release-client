@@ -14,6 +14,11 @@ class PythonDeployScript(object):
     Deployments using this script must at least define a ``venv_dir``
     deployment variable (the path to the virtualenv). If it contains "~", it
     will be expanded to the user's home directory.
+
+    If *copied_system_packages* is used, the system python executable is used
+    to retrieve system packages paths. By default the path to the system python
+    executable is ``/usr/bin/python``. If needed it can be overridden with the
+    ``sys_python`` deployment variable.
     '''
     
     requirements = []
@@ -83,7 +88,8 @@ class PythonDeployScript(object):
         into the virtualenv.
         '''
         for package in self.copied_system_packages:
-            self.venv.copy_system_package(package)
+            self.venv.copy_system_package(package, 
+                    sys_python=self.dvars.get('sys_python'))
 
     def setup_packages(self):
         '''
