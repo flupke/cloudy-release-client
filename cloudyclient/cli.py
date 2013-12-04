@@ -120,10 +120,12 @@ def commit(args):
 
 def poll_deployments(args):
     '''
-    Poll all deployments and deploy them if necessary.
+    Poll all deployments and execute the ones that need to.
     '''
     dry_run = get_global('dry_run', False)
     client = None
+    base_dir = None
+    project_name = None 
     mem_handler = None
     handlers = []
     for url in settings.DEPLOYMENTS:
@@ -158,7 +160,7 @@ def poll_deployments(args):
                 handlers = [file_handler, mem_handler]
             # Execute deployment
             with log.add_hanlers(*handlers):
-                success = deploy(data)
+                success = execute_deployment(data)
                 output = mem_handler.value()
                 if success:
                     client.success(output)
@@ -169,7 +171,8 @@ def poll_deployments(args):
             try:
                 # Remove data file because we want to redo the deployment in
                 # the next run
-                if client is not None:
+                if (client is not None and base_dir is not None and 
+                        project_name is not None):
                     data_path = get_data_filename(base_dir, project_name)
                     if op.exists(data_path):
                         os.unlink(data_path)
@@ -192,9 +195,11 @@ def poll_deployments(args):
             client = None
             mem_handler = None
             handlers = []
+            base_dir = None
+            project_name = None
 
 
-def deploy(data):
+def execute_deployment(data):
     '''
     Do a single deployment, using the *data* dict that was retrieved from the
     server.
