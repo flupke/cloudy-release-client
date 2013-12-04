@@ -2,6 +2,7 @@ import os.path as op
 import logging
 
 import requests
+import pkg_resources
 
 from cloudyclient.conf import settings
 
@@ -21,6 +22,7 @@ class CloudyClient(object):
     def __init__(self, poll_url, dry_run=False):
         self.poll_url = poll_url
         self.dry_run = dry_run
+        self.version = pkg_resources.require('cloudy-release-client')[0].version
 
     def poll(self):
         '''
@@ -42,6 +44,7 @@ class CloudyClient(object):
             'node_name': settings.NODE_NAME,
             'status': 'pending',
             'source_url': self.source_url,
+            'client_version': self.version,
         })
         resp.raise_for_status()
 
@@ -53,6 +56,7 @@ class CloudyClient(object):
             'status': 'error',
             'source_url': self.source_url,
             'output': output,
+            'client_version': self.version,
         })
         resp.raise_for_status()
 
@@ -64,5 +68,6 @@ class CloudyClient(object):
             'status': 'success',
             'source_url': self.source_url,
             'output': output,
+            'client_version': self.version,
         })
         resp.raise_for_status()
