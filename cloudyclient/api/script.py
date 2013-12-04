@@ -55,6 +55,8 @@ class PythonDeployScript(object):
         if self.ddata is None:
             raise Exception('deployment state not found')
         self.dvars = find_deployment_variables()
+        # Expand venv_dir
+        self.dvars['venv_dir'] = op.expanduser(self.dvars['venv_dir'])
 
     def collect_requirements(self):
         '''
@@ -123,8 +125,7 @@ class PythonDeployScript(object):
         Core structure of the script.
         '''
         # Create virtualenv
-        venv_dir = op.expanduser(self.dvars['venv_dir'])
-        self.venv = self.venv_class(venv_dir)
+        self.venv = self.venv_class(self.dvars['venv_dir'])
         # Is this deployment a rollback?
         if self.ddata['commit'] not in self.venv.releases():
             # No, install requirements normally and save a snapshot of the
