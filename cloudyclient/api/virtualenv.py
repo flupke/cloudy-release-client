@@ -35,7 +35,7 @@ class VersionedVirtualenv(object):
                 run('git', 'config', 'user.name', 'anonymous')
                 run('git', 'config', 'user.email', 'a@a.com')
                 run('git', 'add', '.')
-                run('git', 'commit', '-m', 'initial commit')
+                run('git', 'commit', '-qm', 'initial commit')
 
     def run(self, *cmd_args, **kwargs):
         '''
@@ -53,9 +53,9 @@ class VersionedVirtualenv(object):
         Take a snapshot of the virtualenv, named *release*.
         '''
         with cd(self.path):
-            if run('git', 'status', '--porcelain'):
+            if run('git', 'status', '--porcelain', log_pipes=False):
                 run('git', 'add', '.')
-                run('git', 'commit', '-am', 'release: %s' % release)
+                run('git', 'commit', '-qam', 'release: %s' % release)
                 run('git', 'tag', '-f', self.tags_prefix + release)
 
     def rollback(self, release):

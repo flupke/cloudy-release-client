@@ -44,6 +44,9 @@ def run(*cmd_args, **kwargs):
     '''
     Run a subprocess with the list of arguments *cmd_args*.
 
+    It also accepts a single keyword argument, *log_pipes* which defaults to
+    true. If it's false, command output is not logged.
+
     Additional keyword arguments are passed to the :class:`subprocess.Popen`
     constructor.
 
@@ -51,6 +54,7 @@ def run(*cmd_args, **kwargs):
     :class:`subprocess.CalledProcessError` if the command returns a non-zero
     exit status.
     '''
+    log_pipes = kwargs.pop('log_pipes', True)
     cmd_string = ' '.join(cmd_args)
     logger.info(cmd_string)
     if get_global('dry_run', False):
@@ -63,9 +67,9 @@ def run(*cmd_args, **kwargs):
     stdout, stderr = process.communicate()
     stdout = stdout.strip()
     stderr = stderr.strip()
-    if stdout:
+    if log_pipes and stdout:
         logger.info('stdout: %s', stdout.decode('utf8'))
-    if stderr:
+    if log_pipes and stderr:
         logger.info('stderr: %s', stderr.decode('utf8'))
     retcode = process.poll()
     if retcode:
