@@ -222,9 +222,9 @@ def execute_deployment(data):
     except KeyError:
         logger.error('unknown repository type "%s"', repository_type)
         return False
-    checkout = checkout_class()
-    checkout_dir = checkout.get_commit(base_dir, project_name, 
-            data['repository_url'], data['commit'])
+    checkout = checkout_class(base_dir, project_name, data['repository_url'],
+            data['commit'])
+    checkout_dir = checkout.get_commit()
     # Write deployment data in the state directory
     if not dry_run:
         data_filename = get_data_filename(base_dir, project_name)
@@ -240,4 +240,6 @@ def execute_deployment(data):
     except:
         logger.error('deployment script failed', exc_info=True)
         return False
+    # Finalize commit
+    checkout.finalize_commit()
     return True
