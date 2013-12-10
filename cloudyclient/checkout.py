@@ -60,48 +60,58 @@ class Checkout(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def get_commit(self, base_dir, project_name, repo_url, commit):
+    def __init__(self, base_dir, project_name, repo_url, commit):
+        self.base_dir = base_dir
+        self.project_name = project_name
+        self.repo_url = repo_url
+        self.commit = commit
+        self.checkout_symlink = op.join(base_dir, project_name)
+        self.checkout_dirs = [op.join(base_dir, '.%s.%s' % (project_name, i))
+                for i in range(2)]
+        if not op.exists(self.checkout_symlink):
+            self.next_checkout_dir = self.checkout_dirs[0]
+            self.update_symlink = False
+        else:
+            self.current_checkout_dir = run('readlink', self.checkout_symlink)
+            _, index = op.splitext(self.current_checkout_dir)
+            index = int(index[1:])
+            self.next_checkout_dir = self.checkout_dirs[(index + 1) % 2]
+            self.update_symlink = True
+
+    def get_commit(self):
         '''
         Checkout a specific commit from VCS.
 
         Returns the directory where the code has been checked out.
         '''
         # Create base directory
-        run('mkdir', '-p', base_dir)
-        # Clone the repository or copy it to its next location
-        checkout_symlink = op.join(base_dir, project_name)
-        checkout_dirs = [op.join(base_dir, '.%s.%s' % (project_name, i))
-                for i in range(2)]
-        if not op.exists(checkout_symlink):
+        run('mkdir', '-p', self.base_dir)
+        # Clone the repository or copy it to its next location        
+        if not op.exists(self.checkout_symlink):
             # First checkout
-            next_checkout_dir = checkout_dirs[0]
-            if op.exists(next_checkout_dir):
-                run('rm', '-rf', next_checkout_dir)
-            self.clone(repo_url, next_checkout_dir)
-            update_symlink = False
+            if op.exists(self.next_checkout_dir):
+                run('rm', '-rf', self.next_checkout_dir)
+            self.clone(self.repo_url, self.next_checkout_dir)
         else:
             # n-th checkout
-            current_checkout_dir = run('readlink', checkout_symlink)
-            _, index = op.splitext(current_checkout_dir)
-            index = int(index[1:])
-            next_checkout_dir = checkout_dirs[(index + 1) % 2]
-            run('rm', '-rf', next_checkout_dir)
-            run('cp', '-r', current_checkout_dir, next_checkout_dir)
-            update_symlink = True
+            run('rm', '-rf', self.next_checkout_dir)
+            run('cp', '-r', self.current_checkout_dir, self.next_checkout_dir)
         # Fetch from VCS and checkout commit
-        with cd(next_checkout_dir):
-            self.update_repo_url(repo_url)
+        with cd(self.next_checkout_dir):
+            self.update_repo_url(self.repo_url)
             self.fetch()
-            self.checkout_commit(commit)
+            self.checkout_commit(self.commit)
             self.clean()
+        return self.next_checkout_dir
+
+    def finalize_commit(self):
         # Create or update the checkout symlink
-        if update_symlink:
-            temp_symlink = '%s.new' % checkout_symlink
-            run('ln', '-s', next_checkout_dir, temp_symlink)
-            run('mv', '-T', temp_symlink, checkout_symlink)
+        if self.update_symlink:
+            temp_symlink = '%s.new' % self.checkout_symlink
+            run('ln', '-s', self.next_checkout_dir, temp_symlink)
+            run('mv', '-T', temp_symlink, self.checkout_symlink)
         else:
-            run('ln', '-s', next_checkout_dir, checkout_symlink)
-        return next_checkout_dir
+            run('ln', '-s', self.next_checkout_dir, self.checkout_symlink)
 
     @abc.abstractmethod
     def clone(self, repo_url, path):

@@ -7,7 +7,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.2.4'
+version = '0.3'
 
 install_requires = [
     'requests',
@@ -35,6 +35,6 @@ setup(name='cloudy-release-client',
     install_requires=install_requires,
     entry_points={
         'console_scripts':
-            ['cloudy=cloudyclient.cli:main']
+            ['cloudy=cloudyclient.cli.base:main']
     }
 )

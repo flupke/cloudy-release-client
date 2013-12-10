@@ -35,9 +35,14 @@ class CloudyClient(object):
         data['base_dir'] = op.expanduser(data['base_dir'])
         self.update_status_url = data['update_status_url']
         self.source_url = data['source_url']
+        self.commit_url = data['commit_url']
+        self.name = '{project_name}/{deployment_name}'.format(**data)
         return data
 
     def pending(self):
+        '''
+        Set this node's status to pending.
+        '''
         if self.dry_run:
             return
         resp = requests.post(self.update_status_url, data={
@@ -49,6 +54,9 @@ class CloudyClient(object):
         resp.raise_for_status()
 
     def error(self, output):
+        '''
+        Set this node's status to error.
+        '''
         if self.dry_run:
             return
         resp = requests.post(self.update_status_url, data={
@@ -61,6 +69,9 @@ class CloudyClient(object):
         resp.raise_for_status()
 
     def success(self, output):
+        '''
+        Set this node's status to success.
+        '''
         if self.dry_run:
             return
         resp = requests.post(self.update_status_url, data={
@@ -70,4 +81,19 @@ class CloudyClient(object):
             'output': output,
             'client_version': self.version,
         })
+        resp.raise_for_status()
+
+    def get_commit(self):
+        '''
+        Retrieve the current commit of a deployment.
+        '''
+        resp = requests.get(self.commit_url)
+        resp.raise_for_status()
+        return resp.json()
+
+    def set_commit(self, commit):
+        '''
+        Set the current commit of a deployment.
+        '''
+        resp = requests.post(self.commit_url, data={'commit': commit})
         resp.raise_for_status()
