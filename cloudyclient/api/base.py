@@ -8,6 +8,7 @@ import contextlib
 import threading
 import json
 import traceback
+import collections
 
 import yaml
 import jinja2
@@ -44,8 +45,12 @@ def run(*cmd_args, **kwargs):
     '''
     Run a subprocess with the list of arguments *cmd_args*.
 
-    It also accepts a single keyword argument, *log_pipes* which defaults to
-    true. If it's false, command output is not logged.
+    Logging can be controlled with the *log_command* and *log_pipes* keyword
+    arguments. They both default to true, and control output of the command
+    arguments and its stderr/stdout pipes.
+
+    If *no_pipes* is true (default is false), stderr and stdout are not
+    intercepted.
 
     Additional keyword arguments are passed to the :class:`subprocess.Popen`
     constructor.
@@ -55,6 +60,7 @@ def run(*cmd_args, **kwargs):
     exit status.
     '''
     log_pipes = kwargs.pop('log_pipes', True)
+    no_pipes = kwargs.pop('no_pipes', False)
     cmd_string = ' '.join(cmd_args)
     logger.info(cmd_string)
     if get_global('dry_run', False):
@@ -62,11 +68,14 @@ def run(*cmd_args, **kwargs):
     cwd_stack = get_global('cwd_stack', [])
     if cwd_stack and 'cwd' not in kwargs:
         kwargs['cwd'] = cwd_stack[-1]
-    process = subprocess.Popen(cmd_args, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, **kwargs)
+    if not no_pipes:
+        kwargs['stdout'] = subprocess.PIPE
+        kwargs['stderr'] = subprocess.PIPE
+    process = subprocess.Popen(cmd_args, **kwargs)
     stdout, stderr = process.communicate()
-    stdout = stdout.strip()
-    stderr = stderr.strip()
+    if not no_pipes:
+        stdout = stdout.strip()
+        stderr = stderr.strip()
     if log_pipes and stdout:
         logger.info('stdout: %s', stdout.decode('utf8'))
     if log_pipes and stderr:
@@ -153,21 +162,38 @@ def find_deployment_variables(base_dir=None):
     '''
     data = find_deployment_data(base_dir=base_dir)
     if data is not None:
-        variables_format = data['variables_format']
-        variables = data['variables']
-        if variables_format == 'json':
-            return json.loads(variables)
-        elif variables_format == 'yaml':
-            return yaml.load(variables)
-        elif variables_format == 'python':
-            code = compile(variables, '<deployment variables>', 'exec')
-            code_globals = {}
-            exec(code, code_globals)
-            code_globals.pop('__builtins__', None)
-            return code_globals
+        if data.get('base_variables_format') is not None:
+            base_variables = decode_deployment_variables(
+                    data['base_variables_format'],
+                    data['base_variables'])
         else:
-            raise ValueError('unknwon variables format "%s"' %
-                    variables_format)
+            base_variables = {}
+        variables = decode_deployment_variables(data['variables_format'],
+                data['variables'])
+        base_variables.update(variables)
+        return base_variables
+
+
+def decode_deployment_variables(variables_format, variables):
+    '''
+    Decode raw variables *variables* from *variables_format*.
+    '''
+    if variables_format == 'json':
+        ret = json.loads(variables)
+    elif variables_format == 'yaml':
+        ret = yaml.load(variables)
+    elif variables_format == 'python':
+        code = compile(variables, '<deployment variables>', 'exec')
+        code_globals = {}
+        exec(code, code_globals)
+        code_globals.pop('__builtins__', None)
+        ret = code_globals
+    else:
+        raise ValueError('unknwon variables format "%s"' %
+                variables_format)
+    if not isinstance(ret, collections.Mapping):
+        raise TypeError('deployment variables must be a mapping')
+    return ret
 
 
 def render_template(source, destination, context={}, use_jinja=False,
