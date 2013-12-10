@@ -16,6 +16,11 @@ def deploy(args):
     '''
     Get or set a deployment's commit.
     '''
+    # Check args
+    if not args.group and not args.list:
+        print 'you must specify a group name or --list'
+        sys.exit(1)
+
     # Inhibit API logging 
     api_logger = logging.getLogger('cloudyclient.api.base')
     api_logger.setLevel(logging.WARNING)
@@ -27,6 +32,13 @@ def deploy(args):
         print exc
         sys.exit(1)
 
+    if not args.list:
+        push_commit(args, config)
+    else:
+        list_groups(args, config)
+
+
+def push_commit(args, config):
     # Get deployment group definition from configuration
     deployment_groups = config.get('deployment_groups', {})
     group = deployment_groups.get(args.group)
@@ -43,6 +55,18 @@ def deploy(args):
         branch = current_git_branch()
     commit = run('git', 'rev-parse', branch)
 
+    # Push changes if configuration asks for it
+    push = group.get('push', False)
+    if push:
+        print 'git push'
+        run('git', 'push', no_pipes=True)
+        print
+    push_tags = group.get('push_tags', False)
+    if push_tags:
+        print 'git push --tags'
+        run('git', 'push', '--tags', no_pipes=True)
+        print
+
     # Update deployments commits
     poll_urls = group.get('deployments')
     if not poll_urls:
@@ -56,9 +80,18 @@ def deploy(args):
             continue
         if data['commit'] != commit:
             client.set_commit(commit)
-            print '%s: %s' % (client.name, commit)
+            print '%s: %s (%s)' % (client.name, commit, branch)
         else:
             print '%s: already up-to-date' % client.name
+
+
+def list_groups(args, config):
+    '''
+    List available deployment groups.
+    '''
+    deployment_groups = config.get('deployment_groups', {})
+    for name, definition in deployment_groups.items():
+        print '%s: branch %s' % (name, definition['branch'])
 
 
 def current_git_branch():

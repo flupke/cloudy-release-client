@@ -44,8 +44,12 @@ def run(*cmd_args, **kwargs):
     '''
     Run a subprocess with the list of arguments *cmd_args*.
 
-    It also accepts a single keyword argument, *log_pipes* which defaults to
-    true. If it's false, command output is not logged.
+    Logging can be controlled with the *log_command* and *log_pipes* keyword
+    arguments. They both default to true, and control output of the command
+    arguments and its stderr/stdout pipes.
+
+    If *no_pipes* is true (default is false), stderr and stdout are not
+    intercepted.
 
     Additional keyword arguments are passed to the :class:`subprocess.Popen`
     constructor.
@@ -55,6 +59,7 @@ def run(*cmd_args, **kwargs):
     exit status.
     '''
     log_pipes = kwargs.pop('log_pipes', True)
+    no_pipes = kwargs.pop('no_pipes', False)
     cmd_string = ' '.join(cmd_args)
     logger.info(cmd_string)
     if get_global('dry_run', False):
@@ -62,11 +67,14 @@ def run(*cmd_args, **kwargs):
     cwd_stack = get_global('cwd_stack', [])
     if cwd_stack and 'cwd' not in kwargs:
         kwargs['cwd'] = cwd_stack[-1]
-    process = subprocess.Popen(cmd_args, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, **kwargs)
+    if not no_pipes:
+        kwargs['stdout'] = subprocess.PIPE
+        kwargs['stderr'] = subprocess.PIPE
+    process = subprocess.Popen(cmd_args, **kwargs)
     stdout, stderr = process.communicate()
-    stdout = stdout.strip()
-    stderr = stderr.strip()
+    if not no_pipes:
+        stdout = stdout.strip()
+        stderr = stderr.strip()
     if log_pipes and stdout:
         logger.info('stdout: %s', stdout.decode('utf8'))
     if log_pipes and stderr:
