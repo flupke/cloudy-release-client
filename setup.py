@@ -35,6 +35,6 @@ setup(name='cloudy-release-client',
     install_requires=install_requires,
     entry_points={
         'console_scripts':
-            ['cloudy=cloudyclient.cli:main']
+            ['cloudy=cloudyclient.cli.base:main']
     }
 )

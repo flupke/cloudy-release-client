@@ -4,7 +4,11 @@ class CloudyException(Exception):
     '''
 
 
-class TemplateError(Exception):
+class TemplateError(CloudyException):
     '''
     Raised by :func:`cloudyclient.api.render_template`.
     '''
+
+
+class ConfigurationError(CloudyException):
+    pass

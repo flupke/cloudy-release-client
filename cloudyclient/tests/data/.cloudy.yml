@@ -1,0 +1,11 @@
+deployment_groups:
+    foo:
+        branch: master
+        deployments:
+            - http://127.0.0.1:8000/api/deployments/14973f8007e348c6958acb8726e9794d/poll/
+            - http://127.0.0.1:8000/api/deployments/24973f8007e348c6958acb8726e9794d/poll/
+    bar:
+        branch: __current__
+        deployments:
+            - http://127.0.0.1:8000/api/deployments/34973f8007e348c6958acb8726e9794d/poll/
+            - http://127.0.0.1:8000/api/deployments/44973f8007e348c6958acb8726e9794d/poll/

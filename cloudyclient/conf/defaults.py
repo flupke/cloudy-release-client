@@ -2,7 +2,7 @@ import socket
 
 # The list of deployment poll URLs from which the client gets its
 # configurations
-DEPLOYMENTS = []
+POLL_URLS = []
 
 # Number of times VCS commands are retried before failing
 VCS_RETRIES = 10
