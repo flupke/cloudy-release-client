@@ -40,7 +40,7 @@ class CloudyClient(object):
         self.update_status_url = data['update_status_url']
         self.source_url = data['source_url']
         self.commit_url = data['commit_url']
-        self.name = '{project_name}/{deployment_name}'.format(**data)
+        self.deployment_name = '{project_name}/{deployment_name}'.format(**data)
         return data
 
     def pending(self):

@@ -35,7 +35,7 @@ def main():
 
     # cloudy deploy ...
     deploy_parser = subparsers.add_parser('deploy', help='trigger a deployment')
-    deploy_parser.add_argument('group', nargs='?', 
+    deploy_parser.add_argument('group', nargs='*', 
             help='deployments group name')
     deploy_parser.add_argument('-l', '--list', action='store_true', 
             help='list deployment groups')
