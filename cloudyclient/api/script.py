@@ -133,13 +133,16 @@ class PythonDeployScript(object):
             self.venv.checkout_latest()
             self.install_requirements()
             self.copy_system_packages()
-            self.venv.snapshot(self.ddata['commit'])
+            snapshot = True
         else:
             # Yes, simply rollback virtualenv to the previous snapshot
             self.venv.rollback(self.ddata['commit'])
+            snapshot = False
         # Always re-run setup_packages because their location changes at each
-        # deployment
+        # deployment, which could break setup.py develop
         self.setup_packages()
+        if snapshot:
+            self.venv.snapshot(self.ddata['commit'])
         # Run install and post install hooks
         self.install()
         self.post_install()
