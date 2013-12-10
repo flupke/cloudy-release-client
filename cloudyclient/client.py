@@ -19,17 +19,21 @@ class CloudyClient(object):
     status changes are not sent to the server.
     '''
 
-    def __init__(self, poll_url, dry_run=False):
+    def __init__(self, poll_url, dry_run=False, register_node=True):
         self.poll_url = poll_url
         self.dry_run = dry_run
+        self.register_node = register_node
         self.version = pkg_resources.require('cloudy-release-client')[0].version
 
     def poll(self):
         '''
         Poll deployment informations from the server.
         '''
-        resp = requests.get(self.poll_url, 
-                params={'node_name': settings.NODE_NAME})
+        if self.register_node:
+            params = {'node_name': settings.NODE_NAME}
+        else:
+            params = None
+        resp = requests.get(self.poll_url, params=params)
         resp.raise_for_status()
         data = resp.json()
         data['base_dir'] = op.expanduser(data['base_dir'])

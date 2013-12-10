@@ -48,7 +48,7 @@ def deploy(args):
     if not poll_urls:
         print 'deployment group "%s" defines no deployments' % args.group
     for url in poll_urls:
-        client = CloudyClient(url)
+        client = CloudyClient(url, register_node=False)
         try:
             data = client.poll()
         except requests.HTTPError as exc:
