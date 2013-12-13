@@ -41,13 +41,17 @@ def deploy(args):
 def push_commits(args, config):
     # Get deployment groups definitions from configuration
     groups = {}
+    groups_commits = {}
     for group_name in args.group:
+        group_name, _, commit = group_name.partition('@')
         deployment_groups = config.get('deployment_groups', {})
         group = deployment_groups.get(group_name)
         if group is None:
             print 'No such deployment group "%s"' % group_name
             sys.exit(1)
         groups[group_name] = group
+        if commit:
+            groups_commits[group_name] = commit
     
     # Retreive the branches to push
     current_git_branch = get_current_git_branch()
@@ -82,7 +86,9 @@ def push_commits(args, config):
     for group_name, group in groups.items():
         # Retrieve the commit to deploy
         branch = branches[group_name]
-        commit = run('git', 'rev-parse', branch)
+        commit = groups_commits.get(group_name)
+        if commit is None:
+            commit = run('git', 'rev-parse', branch)
         # Update deployments commits
         poll_urls = group.get('deployments', [])
         if not poll_urls:
