@@ -37,7 +37,7 @@ def main():
     deploy_parser = subparsers.add_parser('deploy', 
             description='Trigger groups of deployments.')
     deploy_parser.add_argument('group', nargs='*', 
-            help='deployments group name')
+            help='deployments group name, or group@commit')
     deploy_parser.add_argument('-l', '--list', action='store_true', 
             help='list deployment groups')
     deploy_parser.set_defaults(func=deploy)
