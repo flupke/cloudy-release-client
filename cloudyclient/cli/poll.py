@@ -9,6 +9,8 @@ import traceback
 import json
 import subprocess
 
+from requests.exceptions import Timeout
+
 from cloudyclient import log
 from cloudyclient.api import dry_run, get_global, run
 from cloudyclient.conf import settings
@@ -31,7 +33,10 @@ def poll(args):
             with dry_run():
                 poll_deployments(args)
         else:
-            poll_deployments(args)
+            try:
+                poll_deployments(args)
+            except Timeout:
+                pass
         if args.run_once:
             break
         time.sleep(settings.POLL_INTERVAL)
