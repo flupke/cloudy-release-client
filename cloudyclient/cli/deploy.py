@@ -18,7 +18,7 @@ def deploy(args):
     '''
     # Check args
     if not args.group and not args.list:
-        print 'you must specify a group name or --list'
+        print 'You must specify at least one group name or --list'
         sys.exit(1)
 
     # Inhibit API logging 
@@ -33,56 +33,79 @@ def deploy(args):
         sys.exit(1)
 
     if not args.list:
-        push_commit(args, config)
+        push_commits(args, config)
     else:
         list_groups(args, config)
 
 
-def push_commit(args, config):
-    # Get deployment group definition from configuration
-    deployment_groups = config.get('deployment_groups', {})
-    group = deployment_groups.get(args.group)
-    if group is None:
-        print 'no such deployment group "%s"' % args.group
-        sys.exit(1)
+def push_commits(args, config):
+    # Get deployment groups definitions from configuration
+    groups = {}
+    groups_commits = {}
+    for group_name in args.group:
+        group_name, _, commit = group_name.partition('@')
+        deployment_groups = config.get('deployment_groups', {})
+        group = deployment_groups.get(group_name)
+        if group is None:
+            print 'No such deployment group "%s"' % group_name
+            sys.exit(1)
+        groups[group_name] = group
+        if commit:
+            groups_commits[group_name] = commit
     
-    # Retrieve the commit to deploy
-    branch = group.get('branch')
-    if branch is None:
-        print '"branch" key missing from deployment group "%s"' % args.group
-        sys.exit(1)
-    if branch == '__current__':
-        branch = current_git_branch()
-    commit = run('git', 'rev-parse', branch)
+    # Retreive the branches to push
+    current_git_branch = get_current_git_branch()
+    branches = {}
+    branches_to_push = set()
+    push_tags = False
+    for group_name, group in groups.items():
+        branch = group.get('branch')
+        if branch is None:
+            print '"branch" key missing from deployment group "%s"' % \
+                    group_name
+            sys.exit(1)
+        if branch == '__current__':
+            branch = current_git_branch
+        branches[group_name] = branch
+        if group.get('push', False):
+            branches_to_push.add(branch)
+        if group.get('push_tags', False):
+            push_tags = True
 
-    # Push changes if configuration asks for it
-    push = group.get('push', False)
-    if push:
-        print 'git push'
-        run('git', 'push', no_pipes=True)
+    for branch in branches_to_push:
+        src_dst = '{0}:{0}'.format(branch)
+        print 'git push origin %s' % src_dst
+        run('git', 'push', 'origin', src_dst, no_pipes=True)
         print
-    push_tags = group.get('push_tags', False)
+
     if push_tags:
         print 'git push --tags'
         run('git', 'push', '--tags', no_pipes=True)
         print
 
-    # Update deployments commits
-    poll_urls = group.get('deployments')
-    if not poll_urls:
-        print 'deployment group "%s" defines no deployments' % args.group
-    for url in poll_urls:
-        client = CloudyClient(url, register_node=False)
-        try:
-            data = client.poll()
-        except requests.HTTPError as exc:
-            print 'error polling %s: %s' % (url, exc)
-            continue
-        if data['commit'] != commit:
-            client.set_commit(commit)
-            print '%s: %s (%s)' % (client.name, commit, branch)
-        else:
-            print '%s: already up-to-date' % client.name
+    for group_name, group in groups.items():
+        # Retrieve the commit to deploy
+        branch = branches[group_name]
+        commit = groups_commits.get(group_name)
+        if commit is None:
+            commit = run('git', 'rev-parse', branch)
+        # Update deployments commits
+        poll_urls = group.get('deployments', [])
+        if not poll_urls:
+            print 'Warning: deployment group "%s" defines no deployments' % \
+                    group_name
+        for url in poll_urls:
+            client = CloudyClient(url, register_node=False)
+            try:
+                data = client.poll()
+            except requests.HTTPError as exc:
+                print 'error polling %s: %s' % (url, exc)
+                continue
+            if data['commit'] != commit:
+                client.set_commit(commit)
+                print '%s: %s (%s)' % (client.deployment_name, commit, branch)
+            else:
+                print '%s: already up-to-date' % client.deployment_name
 
 
 def list_groups(args, config):
@@ -94,7 +117,7 @@ def list_groups(args, config):
         print '%s: branch %s' % (name, definition['branch'])
 
 
-def current_git_branch():
+def get_current_git_branch():
     '''
     Return the current GIT branch.
     '''

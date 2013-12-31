@@ -77,9 +77,9 @@ def run(*cmd_args, **kwargs):
         stdout = stdout.strip()
         stderr = stderr.strip()
     if log_pipes and stdout:
-        logger.info('stdout: %s', stdout.decode('utf8'))
+        logger.info('stdout:\n%s', stdout.decode('utf8'))
     if log_pipes and stderr:
-        logger.info('stderr: %s', stderr.decode('utf8'))
+        logger.info('stderr:\n%s', stderr.decode('utf8'))
     retcode = process.poll()
     if retcode:
         error = subprocess.CalledProcessError(retcode, cmd_string)

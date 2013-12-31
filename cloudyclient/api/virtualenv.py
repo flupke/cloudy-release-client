@@ -54,7 +54,7 @@ class VersionedVirtualenv(object):
         '''
         with cd(self.path):
             if run('git', 'status', '--porcelain', log_pipes=False):
-                run('git', 'add', '.')
+                run('git', 'add', '--all', '.')
                 run('git', 'commit', '-qam', 'release: %s' % release)
                 run('git', 'tag', '-f', self.tags_prefix + release)
 

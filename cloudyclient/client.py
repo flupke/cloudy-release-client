@@ -1,7 +1,9 @@
 import os.path as op
 import logging
+import threading
 
 import requests
+from requests.adapters import HTTPAdapter
 import pkg_resources
 
 from cloudyclient.conf import settings
@@ -19,11 +21,42 @@ class CloudyClient(object):
     status changes are not sent to the server.
     '''
 
+    _sessions = threading.local()
+
     def __init__(self, poll_url, dry_run=False, register_node=True):
         self.poll_url = poll_url
         self.dry_run = dry_run
         self.register_node = register_node
         self.version = pkg_resources.require('cloudy-release-client')[0].version
+
+    def _get_http_adapter(self):
+        return HTTPAdapter(max_retries=settings.REQUESTS_RETRIES,
+                pool_maxsize=settings.REQUESTS_POOL_SIZE,
+                pool_connections=settings.REQUESTS_POOL_SIZE)
+
+    def _get_session(self):
+        '''
+        Get the thread-local :class:`requests.Session` object used for all
+        requests.
+        '''
+        if not hasattr(self._sessions, 'session'):
+            session = requests.Session()
+            session.mount('http://', self._get_http_adapter())
+            session.mount('https://', self._get_http_adapter())
+            self._sessions.session = session
+        return self._sessions.session
+
+    def _request(self, method, *args, **kwargs):
+        kwargs['timeout'] = settings.REQUESTS_TIMEOUT
+        session = self._get_session()
+        func = getattr(session, method)
+        return func(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        return self._request('get', *args, **kwargs)
+
+    def post(self, *args, **kwargs):
+        return self._request('post', *args, **kwargs)
 
     def poll(self):
         '''
@@ -33,14 +66,14 @@ class CloudyClient(object):
             params = {'node_name': settings.NODE_NAME}
         else:
             params = None
-        resp = requests.get(self.poll_url, params=params)
+        resp = self.get(self.poll_url, params=params)
         resp.raise_for_status()
         data = resp.json()
         data['base_dir'] = op.expanduser(data['base_dir'])
         self.update_status_url = data['update_status_url']
         self.source_url = data['source_url']
         self.commit_url = data['commit_url']
-        self.name = '{project_name}/{deployment_name}'.format(**data)
+        self.deployment_name = '{project_name}/{deployment_name}'.format(**data)
         return data
 
     def pending(self):
@@ -49,7 +82,7 @@ class CloudyClient(object):
         '''
         if self.dry_run:
             return
-        resp = requests.post(self.update_status_url, data={
+        resp = self.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'pending',
             'source_url': self.source_url,
@@ -63,7 +96,7 @@ class CloudyClient(object):
         '''
         if self.dry_run:
             return
-        resp = requests.post(self.update_status_url, data={
+        resp = self.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'error',
             'source_url': self.source_url,
@@ -78,7 +111,7 @@ class CloudyClient(object):
         '''
         if self.dry_run:
             return
-        resp = requests.post(self.update_status_url, data={
+        resp = self.post(self.update_status_url, data={
             'node_name': settings.NODE_NAME,
             'status': 'success',
             'source_url': self.source_url,
@@ -91,7 +124,7 @@ class CloudyClient(object):
         '''
         Retrieve the current commit of a deployment.
         '''
-        resp = requests.get(self.commit_url)
+        resp = self.get(self.commit_url)
         resp.raise_for_status()
         return resp.json()
 
@@ -99,5 +132,5 @@ class CloudyClient(object):
         '''
         Set the current commit of a deployment.
         '''
-        resp = requests.post(self.commit_url, data={'commit': commit})
+        resp = self.post(self.commit_url, data={'commit': commit})
         resp.raise_for_status()

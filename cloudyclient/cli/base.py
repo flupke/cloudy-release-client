@@ -16,13 +16,13 @@ def main():
     load_conf()
 
     # Create main parser
-    parser = argparse.ArgumentParser(description='cloudy-release client')
+    parser = argparse.ArgumentParser(description='A cloudy-release client.')
     parser.add_argument('--log-level', '-l', default='info')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # cloudy poll ...
     poll_parser = subparsers.add_parser('poll', 
-            help='execute pollments')
+            description='Poll for deployments and execute new ones.')
     poll_parser.add_argument('--run-once', '-1', action='store_true', 
             help='update all pollments and exit; the default is to poll '
             'pollments forever')
@@ -34,13 +34,14 @@ def main():
     poll_parser.set_defaults(func=poll)
 
     # cloudy deploy ...
-    deploy_parser = subparsers.add_parser('deploy', help='trigger a deployment')
-    deploy_parser.add_argument('group', nargs='?', 
-            help='deployments group name')
+    deploy_parser = subparsers.add_parser('deploy', 
+            description='Trigger groups of deployments.')
+    deploy_parser.add_argument('group', nargs='*', 
+            help='deployments group name, or group@commit')
     deploy_parser.add_argument('-l', '--list', action='store_true', 
             help='list deployment groups')
     deploy_parser.set_defaults(func=deploy)
-    
+
     # Parse command line
     args = parser.parse_args()
 
