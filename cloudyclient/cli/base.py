@@ -41,7 +41,7 @@ def main():
     deploy_parser.add_argument('-l', '--list', action='store_true', 
             help='list deployment groups')
     deploy_parser.set_defaults(func=deploy)
-    
+
     # Parse command line
     args = parser.parse_args()
 
