@@ -39,6 +39,16 @@ class PythonDeployScript(object):
     Can be used in subclasses to change the virtualenv abstraction class.
     '''
 
+    disable_venv_rollbacks = False
+    '''
+    If True, fast virtualenv rollbacks with git are disabled, and pip install
+    is always called.
+
+    This can be useful if there are multiple deployments participating to the
+    same virtualenv, and a rollback may erase changes made by another
+    deployment.
+    '''
+
     copied_system_packages = []
     '''
     A list of Python package names that must be copied from the system
@@ -127,7 +137,8 @@ class PythonDeployScript(object):
         # Create virtualenv
         self.venv = self.venv_class(self.dvars['venv_dir'])
         # Is this deployment a rollback?
-        if self.ddata['commit'] not in self.venv.releases():
+        if (self.disable_venv_rollbacks or
+                self.ddata['commit'] not in self.venv.releases()):
             # No, install requirements normally and save a snapshot of the
             # virtualenv
             self.venv.checkout_latest()
