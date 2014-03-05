@@ -107,7 +107,7 @@ def cd(path):
     cwd_stack = get_global('cwd_stack', [])
     cwd_stack.append(path)
     try:
-        yield 
+        yield
     finally:
         cwd_stack.pop()
         if cwd_stack:
@@ -137,7 +137,7 @@ def find_deployment_data(base_dir=None):
     If *base_dir* is not specified, :func:`os.getcwd` is used.
 
     Returns the data dict, or None if it was not found.
-    '''    
+    '''
     if base_dir is None:
         base_dir = os.getcwd()
     base_dir = op.abspath(base_dir)
@@ -207,7 +207,7 @@ def render_template(source, destination, context={}, use_jinja=False,
     If *use_sudo* is true, first save the rendered template to a temporary
     file, then copy it to its final position with sudo.
     '''
-    # Read template source 
+    # Read template source
     with open(source) as fp:
         template_src = fp.read()
 
@@ -234,7 +234,7 @@ def render_template(source, destination, context={}, use_jinja=False,
     # Save rendered template to destination
     if not use_sudo:
         with open(destination, 'w') as fp:
-            fp.write(rendered)  
+            fp.write(rendered)
     else:
         fp = tempfile.NamedTemporaryFile(prefix='cloudyclient-', delete=False)
         fp.write(rendered)
@@ -276,4 +276,4 @@ def _get_template_context(template, line, num_lines=5):
     if marker:
         buf[error_line_in_context] += marker
 
-    return '---\n{0}\n---'.format('\n'.join(buf))        
+    return '---\n{0}\n---'.format('\n'.join(buf))

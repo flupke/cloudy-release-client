@@ -26,7 +26,7 @@ RESERVED_NAMES = (
 )
 
 
-class ConfigurationError(Exception): 
+class ConfigurationError(Exception):
     '''
     Raided to indicate errors at load time.
     '''
@@ -112,10 +112,10 @@ def load(configs=None, defaults=None, namespace=None, log=False):
     '''
     Fill the global :attr:`settings` object, first with *defaults* then with
     *configs*.
-    
+
     *configs* is a list of Python file locations. They are tried one by one,
-    stopping at the first location that can be successfully loaded. 
-    
+    stopping at the first location that can be successfully loaded.
+
     *defaults* is a list of Python file location or objects (class instances,
     modules, etc...), that are all loaded one by one. Passing a file location
     that does not exist raises an error.
@@ -146,14 +146,14 @@ def load(configs=None, defaults=None, namespace=None, log=False):
             else:
                 if not isinstance(getattr(settings_obj, part), SettingsContainer):
                     raise ConfigurationError('creating namespace would '
-                            'overwrite the "settings.%s" setting' % 
+                            'overwrite the "settings.%s" setting' %
                             '.'.join(part[:i]))
             settings_obj = getattr(settings_obj, part)
     # Load defaults and configurations
     if defaults is not None:
         _load(settings_obj, smart_list(defaults), load_all=True)
     if configs is not None:
-        expanded_configs = [op.expanduser(p) if isinstance(p, basestring) else p 
+        expanded_configs = [op.expanduser(p) if isinstance(p, basestring) else p
                 for p in smart_list(configs)]
         _load(settings_obj, expanded_configs, ignore_missing=True, log=log,
                 namespace=namespace)
@@ -216,14 +216,14 @@ def smart_list(value):
     '''
     Convert *value* to a single item list if it is a string or not an iterable.
     '''
-    
+
     def is_iterable(value):
         try:
             iter(value)
             return True
         except TypeError:
             return False
-        
+
     if (isinstance(value, basestring) or not is_iterable(value)):
         return [value]
     return value
@@ -252,7 +252,7 @@ def as_dict(settings_obj=None):
     '''
     Return *settings_obj* contents in a dictionnary (use root settings if left
     unspecified).
-    
+
     Namespace settings are included as nested dicts.
     '''
     if settings_obj is None:

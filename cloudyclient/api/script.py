@@ -20,7 +20,7 @@ class PythonDeployScript(object):
     executable is ``/usr/bin/python``. If needed it can be overridden with the
     ``sys_python`` deployment variable.
     '''
-    
+
     requirements = []
     '''List of requirements files to install.'''
 
@@ -90,7 +90,7 @@ class PythonDeployScript(object):
         into the virtualenv.
         '''
         for package in self.copied_system_packages:
-            self.venv.copy_system_package(package, 
+            self.venv.copy_system_package(package,
                     sys_python=self.dvars.get('sys_python'))
 
     def setup_packages(self):
@@ -118,7 +118,7 @@ class PythonDeployScript(object):
         deployment to external services, etc...).
 
         The default implementation does nothing.
-        '''        
+        '''
 
     def run(self):
         '''
