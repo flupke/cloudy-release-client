@@ -49,7 +49,7 @@ def rety_vcs_command(func):
                 if retries >= settings.VCS_RETRIES:
                     raise
             time.sleep(1)
-    
+
     return wrapper
 
 
@@ -86,7 +86,7 @@ class Checkout(object):
         '''
         # Create base directory
         run('mkdir', '-p', self.base_dir)
-        # Clone the repository or copy it to its next location        
+        # Clone the repository or copy it to its next location
         if not op.exists(self.checkout_symlink):
             # First checkout
             if op.exists(self.next_checkout_dir):

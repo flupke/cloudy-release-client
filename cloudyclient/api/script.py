@@ -20,7 +20,7 @@ class PythonDeployScript(object):
     executable is ``/usr/bin/python``. If needed it can be overridden with the
     ``sys_python`` deployment variable.
     '''
-    
+
     requirements = []
     '''List of requirements files to install.'''
 
@@ -37,6 +37,16 @@ class PythonDeployScript(object):
     venv_class = VersionedVirtualenv
     '''
     Can be used in subclasses to change the virtualenv abstraction class.
+    '''
+
+    disable_venv_rollbacks = False
+    '''
+    If True, fast virtualenv rollbacks with git are disabled, and pip install
+    is always called.
+
+    This can be useful if there are multiple deployments participating to the
+    same virtualenv, and a rollback may erase changes made by another
+    deployment.
     '''
 
     copied_system_packages = []
@@ -90,7 +100,7 @@ class PythonDeployScript(object):
         into the virtualenv.
         '''
         for package in self.copied_system_packages:
-            self.venv.copy_system_package(package, 
+            self.venv.copy_system_package(package,
                     sys_python=self.dvars.get('sys_python'))
 
     def setup_packages(self):
@@ -118,7 +128,7 @@ class PythonDeployScript(object):
         deployment to external services, etc...).
 
         The default implementation does nothing.
-        '''        
+        '''
 
     def run(self):
         '''
@@ -127,7 +137,8 @@ class PythonDeployScript(object):
         # Create virtualenv
         self.venv = self.venv_class(self.dvars['venv_dir'])
         # Is this deployment a rollback?
-        if self.ddata['commit'] not in self.venv.releases():
+        if (self.disable_venv_rollbacks or
+                self.ddata['commit'] not in self.venv.releases()):
             # No, install requirements normally and save a snapshot of the
             # virtualenv
             self.venv.checkout_latest()

@@ -16,7 +16,7 @@ class VersionedVirtualenv(object):
     existing virtualenv by passing True in *rerun_virtualenv*.
     '''
 
-    def __init__(self, path, tags_prefix='release-', 
+    def __init__(self, path, tags_prefix='release-',
             system_site_packages=False, rerun_virtualenv=False):
         self.path = path
         self.tags_prefix = tags_prefix
@@ -95,7 +95,7 @@ class VersionedVirtualenv(object):
         if sys_python is None:
             sys_python = '/usr/bin/python'
         # Get package path in the system packages
-        pkg_file = run(sys_python, '-c', 
+        pkg_file = run(sys_python, '-c',
                 'import {0}; print {0}.__file__'.format(pkg))
         # Get site-packages path in the virtualenv
         venv_site_packages = self.run('python', '-c',

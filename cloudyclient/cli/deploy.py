@@ -21,7 +21,7 @@ def deploy(args):
         print 'You must specify at least one group name or --list'
         sys.exit(1)
 
-    # Inhibit API logging 
+    # Inhibit API logging
     api_logger = logging.getLogger('cloudyclient.api.base')
     api_logger.setLevel(logging.WARNING)
 
@@ -52,7 +52,7 @@ def push_commits(args, config):
         groups[group_name] = group
         if commit:
             groups_commits[group_name] = commit
-    
+
     # Retreive the branches to push
     current_git_branch = get_current_git_branch()
     branches = {}

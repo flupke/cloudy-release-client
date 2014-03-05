@@ -49,7 +49,7 @@ def poll_deployments(args):
     dry_run = get_global('dry_run', False)
     client = None
     base_dir = None
-    project_name = None 
+    project_name = None
     mem_handler = None
     handlers = []
     for url in settings.POLL_URLS:
@@ -95,7 +95,7 @@ def poll_deployments(args):
             try:
                 # Remove data file because we want to redo the deployment in
                 # the next run
-                if (client is not None and base_dir is not None and 
+                if (client is not None and base_dir is not None and
                         project_name is not None):
                     data_path = get_data_filename(base_dir, project_name)
                     if op.exists(data_path):
@@ -108,7 +108,7 @@ def poll_deployments(args):
                     if mem_handler is not None:
                         output = mem_handler.value()
                     else:
-                        output = '%s:\n%s' % (message % url, 
+                        output = '%s:\n%s' % (message % url,
                                 traceback.format_exc())
                     client.error(output)
             except:

@@ -59,7 +59,7 @@ class DeploymentScript(object):
             module, _, func = self.script.partition(':')
             script = ENTRY_POINT_SCRIPT_TEMPLATE.format(module=module, func=func)
             self.write_script(script, fp)
-            run('/usr/bin/env', 'python', fp.name) 
+            run('/usr/bin/env', 'python', fp.name)
         else:
             run('/usr/bin/env', 'python', '-m', self.script)
 
