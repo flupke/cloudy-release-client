@@ -20,7 +20,8 @@ class DeploymentScript(object):
 
     def __init__(self, script_type, script):
         self.script_type = script_type
-        self.script = script.strip()
+        # Replace DOS line endings, as bash does not like them
+        self.script = script.strip().replace('\r\n', '\n')
 
     def run(self, base_dir):
         if not self.script:
