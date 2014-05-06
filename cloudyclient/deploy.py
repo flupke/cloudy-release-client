@@ -2,7 +2,8 @@ import os
 import tempfile
 import logging
 
-from cloudyclient.api import run, cd
+from cloudyclient.api import run, cd, find_deployment_variables
+from cloudyclient.api.shell import ShellVariables
 
 
 ENTRY_POINT_SCRIPT_TEMPLATE = '''
@@ -20,8 +21,7 @@ class DeploymentScript(object):
 
     def __init__(self, script_type, script):
         self.script_type = script_type
-        # Replace DOS line endings, as bash does not like them
-        self.script = script.strip().replace('\r\n', '\n')
+        self.script = script.strip()
 
     def run(self, base_dir):
         if not self.script:
@@ -40,7 +40,14 @@ class DeploymentScript(object):
         Run a bash script.
         '''
         logger.info('running bash deployment script')
-        self.write_script(self.script, fp)
+        # Replace DOS line endings, as bash does not like them
+        script = self.script.replace('\r\n', '\n')
+        # If deployment variables are in shell format, prepend them to the
+        # script
+        variables = find_deployment_variables()
+        if isinstance(variables, ShellVariables):
+            script = unicode(variables) + script
+        self.write_script(script, fp)
         run('/bin/bash', fp.name)
 
     def run_python_script(self, fp):
@@ -75,6 +82,6 @@ class DeploymentScript(object):
         Write *script* to file object *fp* and make sure the contents are on
         disc.
         '''
-        fp.write(self.script)
+        fp.write(script)
         fp.flush()
         os.fsync(fp)
