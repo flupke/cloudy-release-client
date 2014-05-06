@@ -1,0 +1,4 @@
+{
+    "variables_format": "shell",
+    "variables": "a=\"1\"\r\nb=\"2\""
+}
