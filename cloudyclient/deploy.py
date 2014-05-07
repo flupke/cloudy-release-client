@@ -48,7 +48,7 @@ class DeploymentScript(object):
         if isinstance(variables, ShellVariables):
             script = unicode(variables) + script
         self.write_script(script, fp)
-        run('/bin/bash', fp.name)
+        run('/bin/bash', '-xe', fp.name)
 
     def run_python_script(self, fp):
         '''
