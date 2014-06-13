@@ -15,6 +15,7 @@ import jinja2
 
 from cloudyclient.state import load_data
 from cloudyclient.exceptions import TemplateError
+from cloudyclient.api.shell import ShellVariables
 
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,18 @@ def cd(path):
         logger.info('cd %s', cwd)
 
 
+def getcwd():
+    '''
+    Get the current working directory, as set by :func:`cd`.
+    '''
+    cwd_stack = get_global('cwd_stack', [])
+    if cwd_stack:
+        cwd = cwd_stack[-1]
+    else:
+        cwd = os.getcwd()
+    return cwd
+
+
 @contextlib.contextmanager
 def dry_run():
     '''
@@ -134,12 +147,12 @@ def find_deployment_data(base_dir=None):
     '''
     Retrieve deployment data by searching from *base_dir* and up.
 
-    If *base_dir* is not specified, :func:`os.getcwd` is used.
+    If *base_dir* is not specified, :func:`getcwd` is used.
 
     Returns the data dict, or None if it was not found.
     '''
     if base_dir is None:
-        base_dir = os.getcwd()
+        base_dir = getcwd()
     base_dir = op.abspath(base_dir)
     while base_dir != '/':
         base_dir, tail = op.split(base_dir)
@@ -170,6 +183,8 @@ def find_deployment_variables(base_dir=None):
             base_variables = {}
         variables = decode_deployment_variables(data['variables_format'],
                 data['variables'])
+        if isinstance(variables, ShellVariables) and not base_variables:
+            base_variables = ShellVariables('')
         base_variables.update(variables)
         return base_variables
 
@@ -188,6 +203,8 @@ def decode_deployment_variables(variables_format, variables):
         exec(code, code_globals)
         code_globals.pop('__builtins__', None)
         ret = code_globals
+    elif variables_format == 'shell':
+        ret = ShellVariables(variables)
     else:
         raise ValueError('unknwon variables format "%s"' %
                 variables_format)
