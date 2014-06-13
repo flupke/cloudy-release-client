@@ -64,14 +64,14 @@ class VersionedVirtualenv(object):
         '''
         tag_name = self.tags_prefix + release
         with cd(self.path):
-            self.checkout_and_clean(tag_name)
+            self.checkout(tag_name)
 
-    def checkout_latest(self):
+    def checkout_latest(self, clean=True):
         '''
         Checkout the latest release.
         '''
         with cd(self.path):
-            self.checkout_and_clean('master')
+            self.checkout('master', clean=clean)
 
     def releases(self):
         '''
@@ -113,10 +113,13 @@ class VersionedVirtualenv(object):
             # Dealing with a top-level module
             run('cp', '-L', pkg_file, venv_site_packages)
 
-    def checkout_and_clean(self, name):
+    def checkout(self, name, clean=True):
         '''
-        Checkout *name* and clean repository.
+        Checkout *name*.
+
+        If *clean* is true, also run git clean to remove extra files.
         '''
         run('git', 'checkout', '-f', name)
-        run('git', 'clean', '-fxdq')
+        if clean:
+            run('git', 'clean', '-fxdq')
 
