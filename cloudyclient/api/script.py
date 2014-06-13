@@ -141,7 +141,7 @@ class PythonDeployScript(object):
                 self.ddata['commit'] not in self.venv.releases()):
             # No, install requirements normally and save a snapshot of the
             # virtualenv
-            self.venv.checkout_latest()
+            self.venv.checkout_latest(clean=not self.disable_venv_rollbacks)
             self.install_requirements()
             self.copy_system_packages()
             snapshot = True
