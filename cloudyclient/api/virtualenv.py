@@ -119,7 +119,11 @@ class VersionedVirtualenv(object):
 
         If *clean* is true, also run git clean to remove extra files.
         '''
-        run('git', 'checkout', '-f', name)
+        args = ['git', 'checkout']
+        if clean:
+            args.append('-f')
+        args.append(name)
+        run(*args)
         if clean:
             run('git', 'clean', '-fxdq')
 
