@@ -28,6 +28,19 @@ def poll(args):
     '''
     Poll configured deployments and execute them if local copies are outdated.
     '''
+    # Create first round lock
+    if args.first_round_lock:
+        try:
+            open(args.first_round_lock, 'w').close()
+        except:
+            logger.error('failed to create first round lock', exc_info=True)
+            remove_lock = False
+        else:
+            remove_lock = True
+    else:
+        remove_lock = False
+
+    # Poll deployments
     while True:
         if args.dry_run:
             with dry_run():
@@ -36,7 +49,14 @@ def poll(args):
             try:
                 poll_deployments(args)
             except Timeout:
-                pass
+                remove_lock = False
+        if remove_lock:
+            try:
+                os.unlink(args.first_round_lock)
+            except:
+                logger.error('failed to remove first round lock',
+                        exc_info=True)
+            remove_lock = False
         if args.run_once:
             break
         time.sleep(settings.POLL_INTERVAL)

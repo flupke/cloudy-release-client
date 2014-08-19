@@ -24,13 +24,16 @@ def main():
     poll_parser = subparsers.add_parser('poll',
             description='Poll for deployments and execute new ones.')
     poll_parser.add_argument('--run-once', '-1', action='store_true',
-            help='update all pollments and exit; the default is to poll '
-            'pollments forever')
+            help='update all deployments and exit; the default is to poll '
+            'deployments forever')
     poll_parser.add_argument('--dry-run', '-d', action='store_true',
             help='do not modify anything, just log commands that should be '
             'executed')
     poll_parser.add_argument('--force', '-f', action='store_true',
             help='always poll regardless of local state')
+    poll_parser.add_argument('--first-round-lock', help='this file is created '
+            'on startup, and removed once all the deployments have been '
+            'polled once')
     poll_parser.set_defaults(func=poll)
 
     # cloudy deploy ...
