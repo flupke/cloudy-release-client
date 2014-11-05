@@ -32,5 +32,5 @@ class CliConfig(dict):
                     'or in parent directories' % CONFIG_FILENAME)
         self.path = path
         with open(path) as fp:
-            data = yaml.load(fp)
+            data = yaml.safe_load(fp)
         super(CliConfig, self).__init__(data)
