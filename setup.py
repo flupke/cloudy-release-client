@@ -14,6 +14,7 @@ install_requires = [
     'PyYAML',
     'jinja2',
     'argparse',
+    'click',
 ]
 
 

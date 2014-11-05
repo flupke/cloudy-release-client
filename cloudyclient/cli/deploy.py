@@ -5,6 +5,7 @@ import sys
 import logging
 
 import requests
+import click
 
 from cloudyclient.api import run
 from cloudyclient.exceptions import ConfigurationError
@@ -12,12 +13,16 @@ from cloudyclient.client import CloudyClient
 from cloudyclient.cli.config import CliConfig
 
 
-def deploy(args):
+@click.command()
+@click.argument('groups', nargs=-1)
+@click.option('--list', '-l', 'list_deployments', is_flag=True,
+        help='list deployment groups')
+def deploy(groups, list_deployments):
     '''
-    Get or set a deployment's commit.
+    Trigger groups of deployments.
     '''
     # Check args
-    if not args.group and not args.list:
+    if not groups and not list_deployments:
         print 'You must specify at least one group name or --list'
         sys.exit(1)
 
@@ -32,17 +37,17 @@ def deploy(args):
         print exc
         sys.exit(1)
 
-    if not args.list:
-        push_commits(args, config)
+    if not list_deployments:
+        push_commits(groups, config)
     else:
-        list_groups(args, config)
+        list_groups(config)
 
 
-def push_commits(args, config):
+def push_commits(groups, config):
     # Get deployment groups definitions from configuration
     groups = {}
     groups_commits = {}
-    for group_name in args.group:
+    for group_name in groups:
         group_name, _, commit = group_name.partition('@')
         deployment_groups = config.get('deployment_groups', {})
         group = deployment_groups.get(group_name)
@@ -108,7 +113,7 @@ def push_commits(args, config):
                 print '%s: already up-to-date' % client.deployment_name
 
 
-def list_groups(args, config):
+def list_groups(config):
     '''
     List available deployment groups.
     '''
