@@ -8,9 +8,8 @@ import requests
 import click
 
 from cloudyclient.api import run
-from cloudyclient.exceptions import ConfigurationError
 from cloudyclient.client import CloudyClient
-from cloudyclient.cli.config import CliConfig, search_up
+from cloudyclient.conf import CliConfig, search_up
 
 
 DEPLOY_CONFIG_FILENAME = '.cloudy.yml'
@@ -37,9 +36,9 @@ def deploy(groups, list_deployments):
     filename = search_up(DEPLOY_CONFIG_FILENAME)
     if filename is None:
         print '"%s" not found in this directory or in parent directories' \
-                % CONFIG_FILENAME
+                % DEPLOY_CONFIG_FILENAME
         sys.exit(1)
-    deploy_config = CliConfig(filename)
+    config = CliConfig(filename)
 
     if not list_deployments:
         push_commits(groups, config)

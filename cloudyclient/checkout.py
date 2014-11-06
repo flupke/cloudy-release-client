@@ -34,7 +34,7 @@ def get_implementation(name):
 
 def rety_vcs_command(func):
     '''
-    A decorator to wrap VCS commands, retrying ``settings.VCS_RETRIES`` times
+    A decorator to wrap VCS commands, retrying ``settings.vcs_retries`` times
     if the command returns with a non-zero exit status.
     '''
 
@@ -46,7 +46,7 @@ def rety_vcs_command(func):
                 return func(*args, **kwargs)
             except subprocess.CalledProcessError:
                 retries += 1
-                if retries >= settings.VCS_RETRIES:
+                if retries >= settings.vcs_retries:
                     raise
             time.sleep(1)
 

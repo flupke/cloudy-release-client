@@ -72,7 +72,7 @@ def poll(run_once, dry_run, force, first_round_lock):
             remove_lock = False
         if run_once:
             break
-        time.sleep(settings.POLL_INTERVAL)
+        time.sleep(settings.poll_interval)
 
 
 def poll_deployments(force):
@@ -85,7 +85,7 @@ def poll_deployments(force):
     project_name = None
     mem_handler = None
     handlers = []
-    for url in settings.POLL_URLS:
+    for url in settings.poll_urls:
         try:
             logger.debug('polling %s', url)
             # Retrieve deployment data from server

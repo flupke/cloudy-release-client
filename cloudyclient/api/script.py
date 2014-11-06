@@ -1,6 +1,6 @@
 import os.path as op
 
-from cloudyclient.conf.local import load_conf
+from cloudyclient.conf import load_conf
 from cloudyclient import log
 
 from .virtualenv import VersionedVirtualenv

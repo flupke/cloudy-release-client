@@ -4,7 +4,7 @@ import logging
 import click
 
 from cloudyclient import log
-from cloudyclient.conf.local import load_conf
+from cloudyclient.conf import load_conf
 from cloudyclient.cli.poll import poll
 from cloudyclient.cli.deploy import deploy
 
