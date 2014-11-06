@@ -121,7 +121,7 @@ def list_groups(config):
     List available deployment groups.
     '''
     deployment_groups = config.get('deployment_groups', {})
-    for name, definition in deployment_groups.items():
+    for name, definition in sorted(deployment_groups.items()):
         print '%s: branch %s' % (name, definition['branch'])
 
 
