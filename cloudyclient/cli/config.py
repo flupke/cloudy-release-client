@@ -6,31 +6,37 @@ import yaml
 from cloudyclient.exceptions import ConfigurationError
 
 
-CONFIG_FILENAME = '.cloudy.yml'
-
-
 class CliConfig(dict):
     '''
-    Retrieves CLI configuration data by searching ``.cloudy.yml`` in the
-    current directory and in parent directories.
+    Reads and stores CLI configuration.
     '''
 
-    def __init__(self, location=None):
-        if location is None:
-            location = os.getcwd()
-        location = op.abspath(location)
-        path = None
-        while True:
-            if CONFIG_FILENAME in os.listdir(location):
-                path = op.join(location, CONFIG_FILENAME)
+    def __init__(self, locations):
+        if isinstance(locations, basestring):
+            locations = [locations]
+        for location in locations:
+            if op.isfile(location):
+                with open(location) as fp:
+                    data = yaml.safe_load(fp)
                 break
-            if location == '/':
-                break
-            location = op.split(location)[0]
-        if path is None:
-            raise ConfigurationError('"%s" not found in this directory '
-                    'or in parent directories' % CONFIG_FILENAME)
-        self.path = path
-        with open(path) as fp:
-            data = yaml.safe_load(fp)
+        else:
+            raise ConfigurationError('configuration not found, '
+                    'searched in: %s' % ', '.join(locations))
         super(CliConfig, self).__init__(data)
+
+
+def search_up(filename, location=None):
+    '''
+    Search for *filename* in *location* and its parents.
+
+    If *location is None, search from the current directory.
+
+    Return the location or None if there is no such file.
+    '''
+    if location is None:
+        location = os.getcwd()
+    location = op.abspath(location)
+    while location != '/':
+        if filename in os.listdir(location):
+            return op.join(location, filename)
+        location = op.split(location)[0]

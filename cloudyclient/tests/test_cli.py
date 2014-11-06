@@ -2,16 +2,20 @@ import os.path as op
 
 from nose.tools import assert_equal, assert_raises, assert_not_equal
 
-from cloudyclient.cli.config import CliConfig
+from cloudyclient.cli.config import CliConfig, search_up
 from cloudyclient.exceptions import ConfigurationError
 
 
-DATA_DIR = op.join(op.dirname(__file__), 'data')
+THIS_DIR = op.dirname(__file__)
+DATA_DIR = op.join(THIS_DIR, 'data')
+
+
+def test_search_up():
+    assert_equal(search_up('.cloudy.yml', DATA_DIR),
+            op.join(DATA_DIR, '.cloudy.yml'))
 
 
 def test_cli_config():
-    config = CliConfig(DATA_DIR)
+    config = CliConfig(op.join(DATA_DIR, '.cloudy.yml'))
     assert_not_equal(len(config), 0)
-    config_2 = CliConfig(op.join(DATA_DIR, 'checkout_sample'))
-    assert_equal(config, config_2)
-    assert_raises(ConfigurationError, CliConfig, op.join(DATA_DIR, '..'))
+    assert_raises(ConfigurationError, CliConfig, 'foo')
