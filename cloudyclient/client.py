@@ -41,6 +41,9 @@ class CloudyClient(object):
         '''
         if not hasattr(self._sessions, 'session'):
             session = requests.Session()
+            if settings.secret is not None:
+                session.headers['Authorization'] = \
+                        'Secret %s' % settings.secret
             session.mount('http://', self._get_http_adapter())
             session.mount('https://', self._get_http_adapter())
             self._sessions.session = session

@@ -12,26 +12,29 @@ DEFAULT_CONFIG_LOCATIONS = [
     "/etc/cloudy/client.yml",
 ]
 DEFAULTS = {
-    # the list of deployment poll urls from which the client gets its
+    # The list of deployment poll urls from which the client gets its
     # configurations
     'poll_urls': [],
 
-    # number of times vcs commands are retried before failing
+    # Number of times vcs commands are retried before failing
     'vcs_retries': 10,
 
-    # deployments poll interval in seconds
+    # Deployments poll interval in seconds
     'poll_interval': 3,
 
-    # client requests settings
+    # Client requests settings
     'requests_timeout': 10,
     'requests_retries': 3,
     'requests_pool_size': 30,
 
-    # the name used to identify this node in the cloudy-release server
+    # The name used to identify this node in the cloudy-release server
     'node_name': socket.getfqdn(),
 
-    # default format for all loggers
+    # Default format for all loggers
     'logs_format': '[%(asctime)s] [%(levelname)s] %(message)s',
+
+    # Authentication
+    'secret': None,
 }
 
 
