@@ -16,15 +16,15 @@ DEPLOY_CONFIG_FILENAME = '.cloudy.yml'
 
 
 @click.command()
-@click.argument('groups', nargs=-1)
+@click.argument('targets', nargs=-1)
 @click.option('--list', '-l', 'list_deployments', is_flag=True,
         help='list deployment groups')
-def deploy(groups, list_deployments):
+def deploy(targets, list_deployments):
     '''
     Trigger groups of deployments.
     '''
     # Check args
-    if not groups and not list_deployments:
+    if not targets and not list_deployments:
         print 'You must specify at least one group name or --list'
         sys.exit(1)
 
@@ -41,16 +41,16 @@ def deploy(groups, list_deployments):
     config = CliConfig(filename)
 
     if not list_deployments:
-        push_commits(groups, config)
+        push_commits(targets, config)
     else:
         list_groups(config)
 
 
-def push_commits(groups, config):
+def push_commits(targets, config):
     # Get deployment groups definitions from configuration
     groups = {}
     groups_commits = {}
-    for group_name in groups:
+    for group_name in targets:
         group_name, _, commit = group_name.partition('@')
         deployment_groups = config.get('deployment_groups', {})
         group = deployment_groups.get(group_name)
