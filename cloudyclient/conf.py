@@ -33,7 +33,6 @@ DEFAULTS = {
     # default format for all loggers
     'logs_format': '[%(asctime)s] [%(levelname)s] %(message)s',
 }
-settings = None
 
 
 def load_conf(locations=None):
@@ -43,10 +42,8 @@ def load_conf(locations=None):
     *configs* can be a list of Python file locations that will be loaded in
     order to update the defaults.
     """
-    global settings
     if locations is None:
         locations = DEFAULT_CONFIG_LOCATIONS
-    settings = CliConfig(data=DEFAULTS)
     settings.update(CliConfig(locations))
 
 
@@ -60,6 +57,7 @@ class CliConfig(dict):
             if isinstance(locations, basestring):
                 locations = [locations]
             for location in locations:
+                location = op.expanduser(location)
                 if op.isfile(location):
                     with open(location) as fp:
                         data = yaml.safe_load(fp)
@@ -88,3 +86,6 @@ def search_up(filename, location=None):
         if filename in os.listdir(location):
             return op.join(location, filename)
         location = op.split(location)[0]
+
+
+settings = CliConfig(data=DEFAULTS)
