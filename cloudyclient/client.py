@@ -53,7 +53,9 @@ class CloudyClient(object):
         kwargs['timeout'] = settings.requests_timeout
         session = self._get_session()
         func = getattr(session, method)
-        return func(*args, **kwargs)
+        resp = func(*args, **kwargs)
+        resp.raise_for_status()
+        return resp
 
     def get(self, *args, **kwargs):
         return self._request('get', *args, **kwargs)
