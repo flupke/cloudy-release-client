@@ -30,7 +30,7 @@ def get_formatter():
     '''
     Get the default formatter for all handlers.
     '''
-    return logging.Formatter(settings.LOGS_FORMAT)
+    return logging.Formatter(settings.logs_format)
 
 
 class FormattedMemoryHandler(BufferingHandler):

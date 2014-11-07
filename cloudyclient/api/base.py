@@ -196,7 +196,7 @@ def decode_deployment_variables(variables_format, variables):
     if variables_format == 'json':
         ret = json.loads(variables)
     elif variables_format == 'yaml':
-        ret = yaml.load(variables)
+        ret = yaml.safe_load(variables)
     elif variables_format == 'python':
         code = compile(variables, '<deployment variables>', 'exec')
         code_globals = {}

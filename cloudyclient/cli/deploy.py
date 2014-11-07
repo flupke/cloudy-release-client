@@ -5,19 +5,26 @@ import sys
 import logging
 
 import requests
+import click
 
 from cloudyclient.api import run
-from cloudyclient.exceptions import ConfigurationError
 from cloudyclient.client import CloudyClient
-from cloudyclient.cli.config import CliConfig
+from cloudyclient.conf import CliConfig, search_up
 
 
-def deploy(args):
+DEPLOY_CONFIG_FILENAME = '.cloudy.yml'
+
+
+@click.command()
+@click.argument('targets', nargs=-1)
+@click.option('--list', '-l', 'list_deployments', is_flag=True,
+        help='list deployment groups')
+def deploy(targets, list_deployments):
     '''
-    Get or set a deployment's commit.
+    Trigger groups of deployments.
     '''
     # Check args
-    if not args.group and not args.list:
+    if not targets and not list_deployments:
         print 'You must specify at least one group name or --list'
         sys.exit(1)
 
@@ -25,24 +32,25 @@ def deploy(args):
     api_logger = logging.getLogger('cloudyclient.api.base')
     api_logger.setLevel(logging.WARNING)
 
-    # Load CLI configuration
-    try:
-        config = CliConfig()
-    except ConfigurationError as exc:
-        print exc
+    # Load deploy configuration
+    filename = search_up(DEPLOY_CONFIG_FILENAME)
+    if filename is None:
+        print '"%s" not found in this directory or in parent directories' \
+                % DEPLOY_CONFIG_FILENAME
         sys.exit(1)
+    config = CliConfig(filename)
 
-    if not args.list:
-        push_commits(args, config)
+    if not list_deployments:
+        push_commits(targets, config)
     else:
-        list_groups(args, config)
+        list_groups(config)
 
 
-def push_commits(args, config):
+def push_commits(targets, config):
     # Get deployment groups definitions from configuration
     groups = {}
     groups_commits = {}
-    for group_name in args.group:
+    for group_name in targets:
         group_name, _, commit = group_name.partition('@')
         deployment_groups = config.get('deployment_groups', {})
         group = deployment_groups.get(group_name)
@@ -102,18 +110,22 @@ def push_commits(args, config):
                 print 'error polling %s: %s' % (url, exc)
                 continue
             if data['commit'] != commit:
-                client.set_commit(commit)
+                try:
+                    client.set_commit(commit)
+                except requests.HTTPError as exc:
+                    print 'error updating commit on cloudy: %s' % exc
+                    continue
                 print '%s: %s (%s)' % (client.deployment_name, commit, branch)
             else:
                 print '%s: already up-to-date' % client.deployment_name
 
 
-def list_groups(args, config):
+def list_groups(config):
     '''
     List available deployment groups.
     '''
     deployment_groups = config.get('deployment_groups', {})
-    for name, definition in deployment_groups.items():
+    for name, definition in sorted(deployment_groups.items()):
         print '%s: branch %s' % (name, definition['branch'])
 
 

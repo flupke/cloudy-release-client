@@ -30,9 +30,9 @@ class CloudyClient(object):
         self.version = pkg_resources.require('cloudy-release-client')[0].version
 
     def _get_http_adapter(self):
-        return HTTPAdapter(max_retries=settings.REQUESTS_RETRIES,
-                pool_maxsize=settings.REQUESTS_POOL_SIZE,
-                pool_connections=settings.REQUESTS_POOL_SIZE)
+        return HTTPAdapter(max_retries=settings.requests_retries,
+                pool_maxsize=settings.requests_pool_size,
+                pool_connections=settings.requests_pool_size)
 
     def _get_session(self):
         '''
@@ -41,16 +41,21 @@ class CloudyClient(object):
         '''
         if not hasattr(self._sessions, 'session'):
             session = requests.Session()
+            if settings.secret is not None:
+                session.headers['Authorization'] = \
+                        'Secret %s' % settings.secret
             session.mount('http://', self._get_http_adapter())
             session.mount('https://', self._get_http_adapter())
             self._sessions.session = session
         return self._sessions.session
 
     def _request(self, method, *args, **kwargs):
-        kwargs['timeout'] = settings.REQUESTS_TIMEOUT
+        kwargs['timeout'] = settings.requests_timeout
         session = self._get_session()
         func = getattr(session, method)
-        return func(*args, **kwargs)
+        resp = func(*args, **kwargs)
+        resp.raise_for_status()
+        return resp
 
     def get(self, *args, **kwargs):
         return self._request('get', *args, **kwargs)
@@ -63,7 +68,7 @@ class CloudyClient(object):
         Poll deployment informations from the server.
         '''
         if self.register_node:
-            params = {'node_name': settings.NODE_NAME}
+            params = {'node_name': settings.node_name}
         else:
             params = None
         resp = self.get(self.poll_url, params=params)
@@ -83,7 +88,7 @@ class CloudyClient(object):
         if self.dry_run:
             return
         resp = self.post(self.update_status_url, data={
-            'node_name': settings.NODE_NAME,
+            'node_name': settings.node_name,
             'status': 'pending',
             'source_url': self.source_url,
             'client_version': self.version,
@@ -97,7 +102,7 @@ class CloudyClient(object):
         if self.dry_run:
             return
         resp = self.post(self.update_status_url, data={
-            'node_name': settings.NODE_NAME,
+            'node_name': settings.node_name,
             'status': 'error',
             'source_url': self.source_url,
             'output': output,
@@ -112,7 +117,7 @@ class CloudyClient(object):
         if self.dry_run:
             return
         resp = self.post(self.update_status_url, data={
-            'node_name': settings.NODE_NAME,
+            'node_name': settings.node_name,
             'status': 'success',
             'source_url': self.source_url,
             'output': output,

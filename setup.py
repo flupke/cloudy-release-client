@@ -7,13 +7,14 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.5.4'
+version = '0.6.0'
 
 install_requires = [
     'requests',
     'PyYAML',
     'jinja2',
     'argparse',
+    'click',
 ]
 
 
