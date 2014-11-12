@@ -109,7 +109,7 @@ def push_commits(targets, config):
             except requests.HTTPError as exc:
                 if not getattr(exc, 'printed', False):
                     print 'error polling %s: %s' % (url, exc)
-                if exc.final:
+                if getattr(exc, 'final', False):
                     sys.exit(1)
                 continue
             if data['commit'] != commit:
@@ -118,7 +118,7 @@ def push_commits(targets, config):
                 except requests.HTTPError as exc:
                     if not getattr(exc, 'printed', False):
                         print 'error updating commit on cloudy: %s' % exc
-                    if exc.final:
+                    if getattr(exc, 'final', False):
                         sys.exit(1)
                     continue
                 print '%s: %s (%s)' % (client.deployment_name, commit, branch)
