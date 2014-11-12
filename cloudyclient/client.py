@@ -4,6 +4,7 @@ import threading
 
 import requests
 from requests.adapters import HTTPAdapter
+from requests.exceptions import HTTPError
 import pkg_resources
 
 from cloudyclient.conf import settings
@@ -54,7 +55,16 @@ class CloudyClient(object):
         session = self._get_session()
         func = getattr(session, method)
         resp = func(*args, **kwargs)
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except HTTPError as exc:
+            if exc.response.status_code == 403:
+                print 'Authentication failed, check you have the correct ' \
+                        'secret in ~/.config/cloudy/client.yml and you ' \
+                        'have access to this deployment'
+                exc.printed = True
+                exc.final = True
+            raise
         return resp
 
     def get(self, *args, **kwargs):

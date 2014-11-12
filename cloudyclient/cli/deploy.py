@@ -107,13 +107,19 @@ def push_commits(targets, config):
             try:
                 data = client.poll()
             except requests.HTTPError as exc:
-                print 'error polling %s: %s' % (url, exc)
+                if not getattr(exc, 'printed', False):
+                    print 'error polling %s: %s' % (url, exc)
+                if exc.final:
+                    sys.exit(1)
                 continue
             if data['commit'] != commit:
                 try:
                     client.set_commit(commit)
                 except requests.HTTPError as exc:
-                    print 'error updating commit on cloudy: %s' % exc
+                    if not getattr(exc, 'printed', False):
+                        print 'error updating commit on cloudy: %s' % exc
+                    if exc.final:
+                        sys.exit(1)
                     continue
                 print '%s: %s (%s)' % (client.deployment_name, commit, branch)
             else:
