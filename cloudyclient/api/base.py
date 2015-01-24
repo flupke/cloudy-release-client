@@ -175,18 +175,25 @@ def find_deployment_variables(base_dir=None):
     '''
     data = find_deployment_data(base_dir=base_dir)
     if data is not None:
-        if data.get('base_variables_format') is not None:
-            base_variables = decode_deployment_variables(
-                    data['base_variables_format'],
-                    data['base_variables'])
-        else:
-            base_variables = {}
-        variables = decode_deployment_variables(data['variables_format'],
-                data['variables'])
-        if isinstance(variables, ShellVariables) and not base_variables:
-            base_variables = ShellVariables('')
-        base_variables.update(variables)
-        return base_variables
+        return merge_deployment_variables(data)
+
+
+def merge_deployment_variables(data):
+    '''
+    Merge the deployment variables in the *data* :class:`dict`.
+    '''
+    if data.get('base_variables_format') is not None:
+        base_variables = decode_deployment_variables(
+                data['base_variables_format'],
+                data['base_variables'])
+    else:
+        base_variables = {}
+    variables = decode_deployment_variables(data['variables_format'],
+            data['variables'])
+    if isinstance(variables, ShellVariables) and not base_variables:
+        base_variables = ShellVariables('')
+    base_variables.update(variables)
+    return base_variables
 
 
 def decode_deployment_variables(variables_format, variables):
