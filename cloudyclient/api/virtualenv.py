@@ -1,6 +1,6 @@
 import os.path as op
 
-from .base import run, cd
+from .base import run, cd, copy_system_package
 
 
 class VersionedVirtualenv(object):
@@ -85,33 +85,16 @@ class VersionedVirtualenv(object):
                 releases.append(tag[len(self.tags_prefix):])
         return releases
 
-    def copy_system_package(self, pkg, sys_python=None):
+    def copy_system_package(self, pkg, sys_python='/usr/bin/python'):
         '''
         Copy system-wide *pkg* in this virtualenv.
 
         *sys_python* can be given to customize the system python executable
         path. The default is '/usr/bin/python'.
         '''
-        if sys_python is None:
-            sys_python = '/usr/bin/python'
-        # Get package path in the system packages
-        pkg_file = run(sys_python, '-c',
-                'import {0}; print {0}.__file__'.format(pkg))
-        # Get site-packages path in the virtualenv
-        venv_site_packages = self.run('python', '-c',
-            'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
-        # Copy package in virtualenv
-        if '__init__.py' in pkg_file:
-            # Dealing with a package
-            src_dir = op.dirname(pkg_file)
-            basename = op.basename(src_dir)
-            dst_dir = op.join(venv_site_packages, basename)
-            if op.exists(dst_dir):
-                run('rm', '-rf', dst_dir)
-            run('cp', '-rL', src_dir, dst_dir)
-        else:
-            # Dealing with a top-level module
-            run('cp', '-L', pkg_file, venv_site_packages)
+        venv_python = op.join(self.path, 'bin', 'python')
+        copy_system_package(pkg, sys_python=sys_python,
+                venv_python=venv_python)
 
     def checkout(self, name, clean=True):
         '''

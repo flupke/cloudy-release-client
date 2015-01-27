@@ -301,3 +301,34 @@ def _get_template_context(template, line, num_lines=5):
         buf[error_line_in_context] += marker
 
     return '---\n{0}\n---'.format('\n'.join(buf))
+
+
+def copy_system_package(pkg, sys_python='/usr/bin/python',
+        venv_python='python'):
+    '''
+    Copy system-wide *pkg* in a virtualenv.
+
+    *sys_python* can be given to customize the system python executable
+    path. The default is '/usr/bin/python'.
+
+    *venv_python* is used to retrieve the virtualenv's site-packages directory,
+    and defaults to 'python'.
+    '''
+    # Get package path in the system packages
+    pkg_file = run(sys_python, '-c',
+            'import {0}; print {0}.__file__'.format(pkg))
+    # Get site-packages path in the virtualenv
+    venv_site_packages = run(venv_python, '-c',
+        'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+    # Copy package in virtualenv
+    if '__init__.py' in pkg_file:
+        # Dealing with a package
+        src_dir = op.dirname(pkg_file)
+        basename = op.basename(src_dir)
+        dst_dir = op.join(venv_site_packages, basename)
+        if op.exists(dst_dir):
+            run('rm', '-rf', dst_dir)
+        run('cp', '-rL', src_dir, dst_dir)
+    else:
+        # Dealing with a top-level module
+        run('cp', '-L', pkg_file, venv_site_packages)
