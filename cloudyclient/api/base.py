@@ -328,7 +328,7 @@ def copy_system_package(pkg, sys_python='/usr/bin/python',
         dst_dir = op.join(venv_site_packages, basename)
         if op.exists(dst_dir):
             run('rm', '-rf', dst_dir)
-        run('cp', '-rL', src_dir, dst_dir)
+        run('cp', '-RL', src_dir, dst_dir)
     else:
         # Dealing with a top-level module
-        run('cp', '-L', pkg_file, venv_site_packages)
+        run('cp', '-RL', pkg_file, venv_site_packages)
