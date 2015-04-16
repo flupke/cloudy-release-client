@@ -95,7 +95,7 @@ class Checkout(object):
         else:
             # n-th checkout
             run('rm', '-rf', self.next_checkout_dir)
-            run('cp', '-r', self.current_checkout_dir, self.next_checkout_dir)
+            self.clone_local(self.current_checkout_dir, self.next_checkout_dir)
         # Fetch from VCS and checkout commit
         with cd(self.next_checkout_dir):
             self.update_repo_url(self.repo_url)
@@ -143,6 +143,14 @@ class Checkout(object):
         Update the repository URL.
         '''
 
+    def clone_local(self, src_dir, dst_dir):
+        '''
+        Create a local clone of *src_dir* in *dst_dir*.
+
+        The default implementation just makes a recursive copy.
+        '''
+        run('cp', '-r', src_dir, dst_dir)
+
 
 class GitCheckout(Checkout):
 
@@ -162,6 +170,9 @@ class GitCheckout(Checkout):
 
     def update_repo_url(self, url):
         run('git', 'remote', 'set-url', 'origin', url)
+
+    def clone_local(self, src_dir, dst_dir):
+        run('git', 'clone', '--local', src_dir, dst_dir)
 
 
 register('git', GitCheckout)
