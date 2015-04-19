@@ -101,7 +101,7 @@ class PythonDeployScript(object):
         '''
         for package in self.copied_system_packages:
             self.venv.copy_system_package(package,
-                    sys_python=self.dvars.get('sys_python'))
+                    sys_python=self.dvars.get('sys_python', '/usr/bin/python'))
 
     def setup_packages(self):
         '''
