@@ -317,18 +317,26 @@ def copy_system_package(pkg, sys_python='/usr/bin/python',
     # Get package path in the system packages
     pkg_file = run(sys_python, '-c',
             'import {0}; print {0}.__file__'.format(pkg))
+
     # Get site-packages path in the virtualenv
     venv_site_packages = run(venv_python, '-c',
         'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+
     # Copy package in virtualenv
     if '__init__.py' in pkg_file:
         # Dealing with a package
-        src_dir = op.dirname(pkg_file)
-        basename = op.basename(src_dir)
-        dst_dir = op.join(venv_site_packages, basename)
-        if op.exists(dst_dir):
-            run('rm', '-rf', dst_dir)
-        run('cp', '-RL', src_dir, dst_dir)
+        src = op.dirname(pkg_file)
+        basename = op.basename(src)
+        dst = op.join(venv_site_packages, basename)
     else:
         # Dealing with a top-level module
-        run('cp', '-RL', pkg_file, venv_site_packages)
+        src = pkg_file
+        basename = op.basename(pkg_file)
+        dst = op.join(venv_site_packages, basename)
+
+    if op.exists(dst):
+        # Delete existing package
+        run('chmod', '-R', '+w', dst)
+        run('rm', '-rf', dst)
+
+    run('cp', '-RLv', pkg_file, dst)
