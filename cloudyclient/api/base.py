@@ -339,4 +339,4 @@ def copy_system_package(pkg, sys_python='/usr/bin/python',
         run('chmod', '-R', '+w', dst)
         run('rm', '-rf', dst)
 
-    run('cp', '-RLv', pkg_file, dst)
+    run('cp', '-RLv', src, dst)
