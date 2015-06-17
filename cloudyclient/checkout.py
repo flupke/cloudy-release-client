@@ -69,6 +69,7 @@ class Checkout(object):
         self.checkout_dirs = [op.join(base_dir, '.%s.%s' % (project_name, i))
                 for i in range(2)]
         if not op.exists(self.checkout_symlink):
+            self.current_checkout_dir = self.checkout_dirs[1]
             self.next_checkout_dir = self.checkout_dirs[0]
             self.update_symlink = False
         else:
@@ -86,16 +87,12 @@ class Checkout(object):
         '''
         # Create base directory
         run('mkdir', '-p', self.base_dir)
-        # Clone the repository or copy it to its next location
-        if not op.exists(self.checkout_symlink):
-            # First checkout
-            if op.exists(self.next_checkout_dir):
-                run('rm', '-rf', self.next_checkout_dir)
-            self.clone(self.repo_url, self.next_checkout_dir)
-        else:
-            # n-th checkout
-            run('rm', '-rf', self.next_checkout_dir)
-            self.clone_local(self.current_checkout_dir, self.next_checkout_dir)
+        # Clone the repository or copy it from the current checkout
+        if not op.exists(self.next_checkout_dir):
+            if op.exists(self.current_checkout_dir):
+                self.clone_local(self.current_checkout_dir, self.next_checkout_dir)
+            else:
+                self.clone(self.repo_url, self.next_checkout_dir)
         # Fetch from VCS and checkout commit
         with cd(self.next_checkout_dir):
             self.update_repo_url(self.repo_url)
