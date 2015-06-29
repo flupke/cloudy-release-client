@@ -8,6 +8,7 @@ import os.path as op
 import traceback
 import json
 import subprocess
+import datetime
 
 from requests.exceptions import Timeout
 import click
@@ -55,6 +56,8 @@ def poll(run_once, dry_run, force, first_round_lock):
 
     # Poll deployments
     while True:
+        start_time = datetime.datetime.now()
+        logger.info('start deployments')
         if dry_run:
             with dry_run_ctx():
                 poll_deployments(force)
@@ -65,11 +68,15 @@ def poll(run_once, dry_run, force, first_round_lock):
                 remove_lock = False
         if remove_lock:
             try:
+                logger.info('removing first round lock')
                 os.unlink(first_round_lock)
             except:
                 logger.error('failed to remove first round lock',
                         exc_info=True)
             remove_lock = False
+        end_time = datetime.datetime.now()
+        ellapsed = end_time - start_time
+        logger.info('all deployments done, took %s', ellapsed)
         if run_once:
             break
         time.sleep(settings.poll_interval)
@@ -87,12 +94,14 @@ def poll_deployments(force):
     handlers = []
     for url in settings.poll_urls:
         try:
+            start_time = datetime.datetime.now()
             logger.debug('polling %s', url)
             # Retrieve deployment data from server
             client = CloudyClient(url, dry_run=dry_run)
             data = client.poll()
             base_dir = data['base_dir']
             project_name = data['project_name']
+            logger.info('deploying %s', project_name)
             # Get previous deployment hash
             previous_data = load_data(base_dir, project_name)
             depl_hash = data['deployment_hash']
@@ -123,6 +132,9 @@ def poll_deployments(force):
                     client.success(output)
                 else:
                     client.error(output)
+            end_time = datetime.datetime.now()
+            ellapsed = end_time - start_time
+            logger.info('deployed %s in %s', project_name, ellapsed)
         except:
             # Something bad happened
             try:
