@@ -79,7 +79,7 @@ class Checkout(object):
             self.next_checkout_dir = self.checkout_dirs[(index + 1) % 2]
             self.update_symlink = True
 
-    def get_commit(self):
+    def get_commit(self, clean=True):
         '''
         Checkout a specific commit from VCS.
 
@@ -98,7 +98,8 @@ class Checkout(object):
             self.update_repo_url(self.repo_url)
             self.fetch()
             self.checkout_commit(self.commit)
-            self.clean()
+            if clean:
+                self.clean()
         return self.next_checkout_dir
 
     def finalize_commit(self):
