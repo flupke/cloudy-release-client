@@ -122,6 +122,13 @@ class PythonDeployScript(object):
         The default implementation does nothing.
         '''
 
+    def pre_install(self):
+        '''
+        This method is called before all others in :meth:`run`.
+
+        The default implementation does nothing.
+        '''
+
     def post_install(self):
         '''
         Run auxiliary actions after the installation (restart services, log
@@ -134,6 +141,7 @@ class PythonDeployScript(object):
         '''
         Core structure of the script.
         '''
+        self.pre_install()
         # Create virtualenv
         self.venv = self.venv_class(self.dvars['venv_dir'])
         # Is this deployment a rollback?
