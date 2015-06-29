@@ -181,6 +181,7 @@ def execute_deployment(data):
     repository_type = data['repository_type']
     deployment_script_type = data['deployment_script_type']
     deployment_script = data['deployment_script']
+    clean = data.get('clean', True)
     # Checkout code
     try:
         checkout_class = get_implementation(repository_type)
@@ -189,7 +190,7 @@ def execute_deployment(data):
         return False
     checkout = checkout_class(base_dir, project_name, data['repository_url'],
             data['commit'])
-    checkout_dir = checkout.get_commit()
+    checkout_dir = checkout.get_commit(clean=clean)
     # Write deployment data in the state directory
     if not dry_run:
         data_filename = get_data_filename(base_dir, project_name)
