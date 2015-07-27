@@ -38,7 +38,10 @@ logger = logging.getLogger(__name__)
 @click.option('--first-round-lock', metavar='FILE',
         help='this file is created on startup, and removed once all the '
         'deployments have been polled once')
-def poll(run_once, dry_run, force, first_round_lock):
+@click.option('--first-round-tag', metavar='FILE',
+        help='this file is created once all deployments have been polled '
+        'once')
+def poll(run_once, dry_run, force, first_round_lock, first_round_tag):
     '''
     Poll for deployments and execute new ones.
     '''
@@ -47,7 +50,8 @@ def poll(run_once, dry_run, force, first_round_lock):
         try:
             open(first_round_lock, 'w').close()
         except:
-            logger.error('failed to create first round lock', exc_info=True)
+            logger.error('failed to create first round lock: %s',
+                    first_round_lock, exc_info=True)
             remove_lock = False
         else:
             remove_lock = True
@@ -74,6 +78,12 @@ def poll(run_once, dry_run, force, first_round_lock):
                 logger.error('failed to remove first round lock',
                         exc_info=True)
             remove_lock = False
+        if first_round_tag and not op.exists(first_round_tag):
+            try:
+                open(first_round_tag, 'w').close()
+            except:
+                logger.error('failed to create first round tag: %s',
+                        first_round_tag, exc_info=True)
         end_time = datetime.datetime.now()
         ellapsed = end_time - start_time
         logger.info('all deployments done, took %s', ellapsed)
