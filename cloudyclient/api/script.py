@@ -56,17 +56,25 @@ class PythonDeployScript(object):
     impossible to install with pip such as PyQt4 or PyGTK).
     '''
 
-    def __init__(self):
+    def __init__(self, ddata=None, dvars=None):
         # Setup logging
         load_conf()
         log.setup()
-        # Load deployment variables and data
-        self.ddata = find_deployment_data()
-        if self.ddata is None:
-            raise Exception('deployment state not found')
-        self.dvars = find_deployment_variables()
-        # Expand venv_dir
-        self.dvars['venv_dir'] = op.expanduser(self.dvars['venv_dir'])
+
+        # Load deployment data
+        if ddata is None:
+            self.ddata = find_deployment_data()
+            if self.ddata is None:
+                raise Exception('deployment state not found')
+        else:
+            self.ddata = ddata
+
+        # Load deployment variables
+        if dvars is None:
+            self.dvars = find_deployment_variables()
+            self.dvars['venv_dir'] = op.expanduser(self.dvars['venv_dir'])
+        else:
+            self.dvars = dvars
 
     def collect_requirements(self):
         '''
@@ -137,13 +145,15 @@ class PythonDeployScript(object):
         The default implementation does nothing.
         '''
 
+    def create_venv_obj(self):
+        self.venv = self.venv_class(self.dvars['venv_dir'])
+
     def run(self):
         '''
         Core structure of the script.
         '''
         self.pre_install()
-        # Create virtualenv
-        self.venv = self.venv_class(self.dvars['venv_dir'])
+        self.create_venv_obj()
         # Is this deployment a rollback?
         if (self.disable_venv_rollbacks or
                 self.ddata['commit'] not in self.venv.releases()):
