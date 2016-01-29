@@ -7,7 +7,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.7.0'
+version = '0.8.0'
 
 install_requires = [
     'requests',
@@ -18,13 +18,11 @@ install_requires = [
 ]
 
 
-setup(name='cloudy-release-client',
+setup(
+    name='cloudy-release-client',
     version=version,
     description="Client program and library for cloudy-release.",
     long_description=README + '\n\n' + NEWS,
-    classifiers=[
-      # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    ],
     keywords='deployment cloudy-release',
     author='Luper Rouch',
     author_email='luper.rouch@gmail.com',
