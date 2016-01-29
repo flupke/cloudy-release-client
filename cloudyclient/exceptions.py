@@ -12,3 +12,7 @@ class TemplateError(CloudyException):
 
 class ConfigurationError(CloudyException):
     pass
+
+
+class Timeout(CloudyException):
+    pass

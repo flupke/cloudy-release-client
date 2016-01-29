@@ -6,6 +6,7 @@ import abc
 
 from cloudyclient.api import run, cd
 from cloudyclient.conf import settings
+from .utils.git import safe_git_operation
 
 
 _registry = {}
@@ -17,7 +18,7 @@ def register(name, implementation):
     '''
     if name in _registry:
         raise ValueError('%s is already registered for name %s' %
-                (_registry[name], name))
+                         (_registry[name], name))
     _registry[name] = implementation
 
 
@@ -67,7 +68,7 @@ class Checkout(object):
         self.commit = commit
         self.checkout_symlink = op.join(base_dir, project_name)
         self.checkout_dirs = [op.join(base_dir, '.%s.%s' % (project_name, i))
-                for i in range(2)]
+                              for i in range(2)]
         if not op.exists(self.checkout_symlink):
             self.current_checkout_dir = self.checkout_dirs[1]
             self.next_checkout_dir = self.checkout_dirs[0]
@@ -90,7 +91,8 @@ class Checkout(object):
         # Clone the repository or copy it from the current checkout
         if not op.exists(self.next_checkout_dir):
             if op.exists(self.current_checkout_dir):
-                self.clone_local(self.current_checkout_dir, self.next_checkout_dir)
+                self.clone_local(self.current_checkout_dir,
+                                 self.next_checkout_dir)
             else:
                 self.clone(self.repo_url, self.next_checkout_dir)
         # Fetch from VCS and checkout commit
@@ -158,7 +160,7 @@ class GitCheckout(Checkout):
 
     @rety_vcs_command
     def fetch(self):
-        run('git', 'fetch')
+        safe_git_operation(['git', 'fetch'])
 
     def checkout_commit(self, commit):
         run('git', 'checkout', commit)
