@@ -16,3 +16,7 @@ class ConfigurationError(CloudyException):
 
 class Timeout(CloudyException):
     pass
+
+
+class CommandFailed(CloudyException):
+    pass

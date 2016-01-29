@@ -1,9 +1,13 @@
 import os
 import os.path as op
 import time
+import logging
 
 from cloudyclient.api import run, wait_process
-from ..exceptions import Timeout
+from ..exceptions import Timeout, CommandFailed
+
+
+logger = logging.getLogger(__name__)
 
 
 def safe_git_operation(args,
@@ -18,13 +22,16 @@ def safe_git_operation(args,
         safe_git_operation(['git', 'fetch'])
 
     '''
+    cmd_string = ' '.join(args)
     for i in range(retries):
         try:
             return _run_git_cmd_once(args, timeout, check_interval)
         except Timeout:
-            pass
+            logger.warning('"%s" timed out', cmd_string)
     else:
-        raise Exception('git fetch failed after %s retries' % retries)
+        err = '"%s" failed after %s retries' % (cmd_string, retries)
+        logger.error(err)
+        raise CommandFailed(err)
 
 
 def _get_tree_data(base_dir):
