@@ -46,22 +46,27 @@ def run(*cmd_args, **kwargs):
     '''
     Run a subprocess with the list of arguments *cmd_args*.
 
-    Logging can be controlled with the *log_command* and *log_pipes* keyword
-    arguments. They both default to true, and control output of the command
-    arguments and its stderr/stdout pipes.
+    It accepts the following keyword arguments:
 
-    If *no_pipes* is true (default is false), stderr and stdout are not
-    intercepted.
+    :param log_pipes: log process stdout and stderr (default: True)
+    :param no_pipes: disable capture of process streams (default: False)
+    :param block: wait for process completion (default: True)
 
     Additional keyword arguments are passed to the :class:`subprocess.Popen`
     constructor.
 
     Returns the subprocess' stdout on success, or raises
     :class:`subprocess.CalledProcessError` if the command returns a non-zero
-    exit status.
+    exit status, unless *block* is false, in which case the
+    :class:`subprocess.Popen` object is returned.
+
+    :func:`wait_process` can be used on the returned process object to retrieve
+    and log the process' streams, and check its return value (as if :func:`run`
+    was called with ``block=True``).
     '''
     log_pipes = kwargs.pop('log_pipes', True)
     no_pipes = kwargs.pop('no_pipes', False)
+    block = kwargs.pop('block', True)
     cmd_string = ' '.join(cmd_args)
     logger.info(cmd_string)
     if get_global('dry_run', False):
@@ -73,17 +78,33 @@ def run(*cmd_args, **kwargs):
         kwargs['stdout'] = subprocess.PIPE
         kwargs['stderr'] = subprocess.PIPE
     process = subprocess.Popen(cmd_args, **kwargs)
+    process.cloudy_no_pipes = no_pipes
+    process.cloudy_log_pipes = log_pipes
+    process.cloudy_cmd_string = cmd_string
+    if block:
+        return wait_process(process)
+    else:
+        return process
+
+
+def wait_process(process):
+    '''
+    Wait for *process* and return its stdout.
+
+    Usefull in conjuction of :func:`run` with ``block=False``.
+    '''
     stdout, stderr = process.communicate()
-    if not no_pipes:
+    if not process.cloudy_no_pipes:
         stdout = stdout.strip()
         stderr = stderr.strip()
-    if log_pipes and stdout:
+    if process.cloudy_log_pipes and stdout:
         logger.info('stdout:\n%s', stdout.decode('utf8'))
-    if log_pipes and stderr:
+    if process.cloudy_log_pipes and stderr:
         logger.info('stderr:\n%s', stderr.decode('utf8'))
     retcode = process.poll()
     if retcode:
-        error = subprocess.CalledProcessError(retcode, cmd_string)
+        error = subprocess.CalledProcessError(retcode,
+                                              process.cloudy_cmd_string)
         logger.error(str(error))
         raise error
     return stdout
