@@ -10,22 +10,28 @@ from ..exceptions import Timeout, CommandFailed
 logger = logging.getLogger(__name__)
 
 
-def safe_git_operation(args,
+def run_and_watch_tree(args,
+                       watched_dir,
                        retries=5,
                        timeout=60,
                        check_interval=0.25):
     '''
-    Execute a git *command* with *args*, making sure it doesn't get stuck.
+    Execute a command with *args* while monitoring the files in *watched_dir*.
+
+    If files stop changing in *watched_dir* for more than *timeout* seconds,
+    kill the command and retry, up to *retries* times. The files in *base_dir*
+    are checked every *check_interval* seconds.
 
     Example::
 
-        safe_git_operation(['git', 'fetch'])
+        run_and_watch_tree(['git', 'fetch'], '.git')
 
     '''
     cmd_string = ' '.join(args)
     for i in range(retries):
         try:
-            return _run_git_cmd_once(args, timeout, check_interval)
+            return _run_and_watch_tree_once(args, watched_dir, timeout,
+                                            check_interval)
         except Timeout:
             logger.warning('"%s" timed out', cmd_string)
     else:
@@ -60,20 +66,23 @@ def _compare_tree_data(prev_data, new_data):
     return False, 'tree did not change'
 
 
-def _run_git_cmd_once(args, timeout, check_interval):
+def _run_and_watch_tree_once(args, watched_dir, timeout, check_interval):
+    cmd_string = ' '.join(args)
     process = run(*args, block=False)
     last_change = time.time()
-    watched_dir = '.git'
     prev_data = _get_tree_data(watched_dir)
     while True:
         if process.poll() is not None:
+            logger.debug('"%s" ended', cmd_string)
             break
         time.sleep(check_interval)
         new_data = _get_tree_data(watched_dir)
-        changed, _ = _compare_tree_data(prev_data, new_data)
+        changed, reason = _compare_tree_data(prev_data, new_data)
         if changed:
             last_change = time.time()
+            logger.debug('files in %s changed: %s', watched_dir, reason)
         else:
+            logger.debug('files did not change in %s', watched_dir)
             if time.time() - last_change > timeout:
                 process.terminate()
                 process.wait()
@@ -81,4 +90,7 @@ def _run_git_cmd_once(args, timeout, check_interval):
         prev_data = new_data
     # Call wait_process() to log streams and raise an error if process
     # terminated abnormally
-    return wait_process(process)
+    logger.debug('retrieving "%s" streams', cmd_string)
+    ret = wait_process(process)
+    logger.debug('"%s" ended successfully', cmd_string)
+    return ret
