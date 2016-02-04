@@ -90,7 +90,6 @@ def _run_and_watch_tree_once(args, watched_dir, timeout, check_interval):
         prev_data = new_data
     # Call wait_process() to log streams and raise an error if process
     # terminated abnormally
-    logger.debug('retrieving "%s" streams', cmd_string)
     ret = wait_process(process)
     logger.debug('"%s" ended successfully', cmd_string)
     return ret

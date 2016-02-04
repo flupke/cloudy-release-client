@@ -75,16 +75,24 @@ def run(*cmd_args, **kwargs):
     if cwd_stack and 'cwd' not in kwargs:
         kwargs['cwd'] = cwd_stack[-1]
     if not no_pipes:
-        kwargs['stdout'] = subprocess.PIPE
-        kwargs['stderr'] = subprocess.PIPE
+        # We don't use PIPE + Popen.communicate() because of an obscure bug,
+        # see http://bugs.python.org/issue4216#msg77582
+        kwargs['stdout'] = _create_temp_file()
+        kwargs['stderr'] = _create_temp_file()
     process = subprocess.Popen(cmd_args, **kwargs)
     process.cloudy_no_pipes = no_pipes
     process.cloudy_log_pipes = log_pipes
     process.cloudy_cmd_string = cmd_string
+    process.cloudy_stderr = kwargs.get('stderr')
+    process.cloudy_stdout = kwargs.get('stdout')
     if block:
         return wait_process(process)
     else:
         return process
+
+
+def _create_temp_file():
+    return tempfile.NamedTemporaryFile(prefix='cloudy-release-client-')
 
 
 def wait_process(process):
@@ -93,15 +101,19 @@ def wait_process(process):
 
     Usefull in conjuction of :func:`run` with ``block=False``.
     '''
-    stdout, stderr = process.communicate()
+    retcode = process.wait()
+    logger.debug('process ended with exit code %s', retcode)
     if not process.cloudy_no_pipes:
-        stdout = stdout.strip()
-        stderr = stderr.strip()
+        process.cloudy_stdout.seek(0)
+        process.cloudy_stderr.seek(0)
+        stdout = process.cloudy_stdout.read().strip()
+        stderr = process.cloudy_stderr.read().strip()
+    else:
+        stdout = stderr = None
     if process.cloudy_log_pipes and stdout:
         logger.info('stdout:\n%s', stdout.decode('utf8'))
     if process.cloudy_log_pipes and stderr:
         logger.info('stderr:\n%s', stderr.decode('utf8'))
-    retcode = process.poll()
     if retcode:
         error = subprocess.CalledProcessError(retcode,
                                               process.cloudy_cmd_string)
@@ -258,7 +270,8 @@ def render_template(source, destination, context={}, use_jinja=False,
 
     # Render template
     if use_jinja:
-        template = jinja2.Template(template_src, undefined=jinja2.StrictUndefined)
+        template = jinja2.Template(template_src,
+                                   undefined=jinja2.StrictUndefined)
         try:
             rendered = template.render(**context)
         except jinja2.TemplateSyntaxError as exc:
@@ -304,9 +317,9 @@ def _get_template_context(template, line, num_lines=5):
     if line > num_template_lines:
         return template
 
-    context_start = max(0, line - num_lines - 1)  # subtract 1 for 0-based indexing
+    context_start = max(0, line - num_lines - 1)
     context_end = min(num_template_lines, line + num_lines)
-    error_line_in_context = line - context_start - 1  # subtract 1 for 0-based indexing
+    error_line_in_context = line - context_start - 1
 
     buf = []
     if context_start > 0:
@@ -341,7 +354,8 @@ def copy_system_package(pkg, sys_python='/usr/bin/python',
 
     # Get site-packages path in the virtualenv
     venv_site_packages = run(venv_python, '-c',
-        'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
+        'from distutils.sysconfig import get_python_lib; '
+        'print(get_python_lib())')
 
     # Copy package in virtualenv
     if '__init__.py' in pkg_file:
