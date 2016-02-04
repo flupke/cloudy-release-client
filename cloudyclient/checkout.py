@@ -6,7 +6,6 @@ import abc
 
 from cloudyclient.api import run, cd
 from cloudyclient.conf import settings
-from .utils.cmd import run_and_watch_tree
 
 
 _registry = {}
@@ -160,7 +159,7 @@ class GitCheckout(Checkout):
 
     @rety_vcs_command
     def fetch(self):
-        run_and_watch_tree(['git', 'fetch'], '.git')
+        run('git', 'fetch')
 
     def checkout_commit(self, commit):
         run('git', 'checkout', commit)
